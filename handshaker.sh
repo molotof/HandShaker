@@ -208,12 +208,20 @@ pyrit"""
 	echo
 	echo $BLU" [*] Changing monitor device MAC addresses. "$GRN
 	echo
+	NICS="$(ifconfig | grep wlan | cut -d ' ' -f 1)"
+	for CARD in $NICS
+		do
+			ifconfig $CARD down
+			iwconfig $CARD txpower 30 | grep sejsjf
+			sleep 0.5
+			ifconfig $CARD up
+		done
+		
 	for MON in $MONS
 		do
 			ifconfig $MON down
 			echo " [*] $(macchanger -a $MON | grep New | tr -d 'New' | sed 's/^ *//g')"
 			echo " [*] $MON MAC address changed and power boosted. "
-			iwconfig $MON txpower 30 2> /dev/null
 			sleep 0.5			
 			ifconfig $MON up
 			echo
@@ -349,8 +357,17 @@ fclientscan()															#Find active clients
 fbotstart()																#Startup Autobot
 {	
 	MONS="$(ifconfig | grep mon | cut -d ' ' -f 1)"
+	NICS="$(ifconfig | grep wlan | cut -d ' ' -f 1)"
 	echo $BLU" [*] Changing monitor device MAC addresses. "
 	echo $GRN
+	for CARD in $NICS
+		do
+			ifconfig $CARD down
+			iwconfig $CARD txpower 30 | grep rgssfs
+			sleep 0.5
+			ifconfig $CARD up
+		done
+		
 	for MON in $MONS
 		do
 			ifconfig $MON down
@@ -358,8 +375,6 @@ fbotstart()																#Startup Autobot
 			if [ $PWRCHK -z ] 2> /dev/null
 				then
 					echo " [*] $MON MAC address changed and power boosted. "
-					iwconfig $MON txpower 30 2> /dev/null
-					sleep 0.5
 				else
 					echo " [*] $MON MAC address changed "
 			fi
