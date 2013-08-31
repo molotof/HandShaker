@@ -394,8 +394,13 @@ fbotstart()																#Startup Autobot
 	echo $BLU" [>]$GRN AUTOBOT ENGAGED$BLU [<] "
 	echo
 	echo " [*]$GRN Scanning$BLU for new active clients.. ";$COLOR2 9
-	gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
-	gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+	if [ $NIC2 -z ] 2> /dev/null
+		then
+			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+		else
+			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+	fi
 	DONE=""
 	PWRCHK=1;RESETCNT=1;MNUM=0;LNUM=0
 	GOT=$(cat $OUTDIR/got);echo "$GOT" | sort -u > $OUTDIR/got
@@ -412,8 +417,13 @@ fautobot()																#Automagically find new target clients
 			killall airodump-ng
 			sleep 0.7
 			rm -rf $HOME/tmp*
-			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
-			gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+			if [ $NIC2 -z ] 2> /dev/null
+				then
+					gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+				else
+					gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+					gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+			fi
 			MNUM=0
 			LNUM=0
 			RESETCNT=1
@@ -478,6 +488,8 @@ fautobot()																#Automagically find new target clients
 			
 	fi
 	CLIENT=$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep "$BSSID" | cut -d ',' -f 1 | sed '/^$/d' | head -n 1)
+	POWER=$(cat $HOME/tmp-01.csv | grep $CLIENT | cut -d ',' -f 4)
+	POWER=${POWER:1}
 	if [ $CLIENT -z ] 2> /dev/null
 		then
 			fautobot
@@ -489,7 +501,6 @@ fautobot()																#Automagically find new target clients
 			RESETCNT=$((RESETCNT + 1))
 			fautobot
 		else
-			fpower
 			if [ $POWERLIMIT -z ] 2> /dev/null
 				then
 					A=1
@@ -582,43 +593,48 @@ fautocap()																#Deauth targets and collect handshakes
 					TARGETS="$TARGETS\n$TARGETS2"
 					TARGETS=$(echo -e "$TARGETS" | sort -u)
 			fi
-			if [ $DEPASS = "1" ] 2> /dev/null
-				then
-					if [ $POWERLIMIT -z ] 2> /dev/null
-						then
-							A=1
-						else
-							fpower
-							if [ $POWER -gt $POWERLIMIT ] 2> /dev/null
-								then
-									sleep 1.3
-									fautocap
-							fi
-					fi
-							
-					CLICNT=$(echo "$TARGETS" | wc -l)
-					if [ $CLINUM -gt $CLICNT ] 2> /dev/null
-						then
-							CLINUM=1
-							DISPNUM=1
-					fi
-					if [ $TARGETS -z ] 2> /dev/null
-						then
-							A=1
-						else
-							CLIENT=$(echo "$TARGETS" | sed -n "$CLINUM"p)
-							DISPNUM=$CLINUM
-					fi
 					
+			if [ $POWERLIMIT -z ] 2> /dev/null
+				then
+					A=1
+				else
+					TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+					for OCLI in $TARGETS
+						do
+							POWER=$(echo "$TMPF" | grep "$OCLI" | cut -d ',' -f 4)
+							POWER=${POWER:1}
+							echo "$OCLI $POWER" >> $HOME/tmpp
+						done
+					
+					POWERLIST=$(cat $HOME/tmpp)
+					for OCLI in $POWERLIST
+						do
+							if [ $(echo $OCLI | cut -d ' ' -f 2) -le $POWERLIMIT ] 2> /dev/null
+								then
+									echo $(echo $OCLI | cut -d ' ' -f 1) >> tmpff
+							fi
+						done
+					TARGETS="$(cat $HOME/tmpff)"
 			fi
+							
 			clear
-			
 			if [ $DO = 'A' ] 2> /dev/null
 				then
 					echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] ";echo
 			fi
-			echo -e $RED" [*] Target ESSID:\t $GRN$ESSID$RED\t\t Loaded   [*] "
-			echo -e $RED" [*] Target BSSID:\t $GRN$BSSID$RED\t Loaded   [*]"$RST
+			if [ $(echo $ESSID | wc -c) -ge 16 ] 2> /dev/null
+				then
+					TABS='\t'
+				else
+					if [ $(echo $ESSID | wc -c) -le 7 ]
+						then
+							TABS='\t\t\t'
+						else
+							TABS='\t\t'
+					fi
+			fi
+			echo -e $RED" [*] Target ESSID:\t $GRN$ESSID$RED$TABS Loaded   [*] "
+			echo -e " [*] Target BSSID:\t $GRN$BSSID$RED\t Loaded   [*]"$RST
 			sleep 0.7
 			if [ $TARGETS -z ] 2> /dev/null
 				then
@@ -691,12 +707,10 @@ fautocap()																#Deauth targets and collect handshakes
 					fi
 					
 			fi
-			CLINUM=$((CLINUM + 1))
 			echo
 			echo $BLU" [*] Analyzing pcap for handshake [*] "$RST
 			EDONE=""
 			fanalyze
-			DEPASS=1
 			if [[ $DO = 'A' || $DEAU = "1" ]] 2> /dev.null
 				then
 					DECNT=$((DECNT + 1))
@@ -964,28 +978,6 @@ fgetgps()
 		"""
 	LOCATION="$DEGS1 $FIRST $MINS1 Minutes $SECS1 Seconds, $DEGS2 $SECOND $MINS2 Minutes $SECS2 Seconds"
 	URL=' - '$URL
-}
-
-fpower()																#Find power stats
-{
-	MACS="$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep : | grep $CLIENT | cut -d ',' -f 4,6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp3
-	for MAC in $MACS
-		do
-			if [ $(echo $MAC | cut -d ',' -f 2) -z ] 2> /dev/null
-				then
-					A=1
-				else
-					if [ $PTARGETS -z ] 2> /dev/null
-						then
-							PTARGETS=$MAC
-						else
-							PTARGETS="$PTARGETS\n$MAC"
-							MCNT=$((MCNT + 1))
-					fi
-			fi
-		done
-	POWER=$(echo -e "$PTARGETS" | grep "$BSSID" | head -n 1 | cut -d ',' -f 1)
-	POWER=${POWER:1}
 }
 
 fexit()																	#Exit
