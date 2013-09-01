@@ -764,12 +764,12 @@ fautocap()																#Deauth targets and collect handshakes
 				then
 					DONE=1
 				else
+					echo
+					echo $RED" [*] No handshake detected [*] "$RST
 					if [ $SILENT -z ] 2> /dev/null
 						then
 							beep -f 100 -l 100;beep -f 50 -l 100
 					fi
-					echo
-					echo $RED" [*] No handshake detected [*] "$RST
 					echo
 					if [ $EVIL = 1 ] 2> /dev/null
 						then
@@ -827,10 +827,6 @@ fautocap()																#Deauth targets and collect handshakes
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 			fi
 		else
-			if [ $EDONE = 1 ] 2> /dev/null
-				then
-					cp $HOME/tmpe-01.cap $HOME/tmp-01.cap
-			fi
 			echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 	fi
 	echo
