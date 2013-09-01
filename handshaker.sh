@@ -501,20 +501,17 @@ fautobot()																#Automagically find new target clients
 				else
 					CLIENT=$(echo "$FCAT" | grep Station -A 7 | grep "$BSSID" | cut -d ',' -f 1 | sed '/^$/d' | head -n 1)
 			fi
-			if [ $CLIENT -z ] 2> /dev/null
-				then
-					A=1
-				else
-					POWER=$(echo "$FCAT" | grep $CLIENT | cut -d ',' -f 4 | head -n 1)
-					POWER=${POWER:1}
-					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
-					ESSID=${ESSID:1}
-					SDONE=1
-			fi
+			SDONE=1
 			if [ $CLIENT -z ] 2> /dev/null
 				then
 					SDONE=""
-			elif [ $POWER -z ] 2> /dev/null
+				else
+					POWER=$(echo "$FCAT" | grep $CLIENT | cut -d ',' -f 4 | head -n 1)
+					POWER=${POWER:2}
+					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
+					ESSID=${ESSID:1}
+			fi
+			if [ $POWER -z ] 2> /dev/null
 				then
 					SDONE=""
 			elif [ $ESSID -z ] 2> /dev/null
@@ -755,9 +752,10 @@ fautocap()																#Deauth targets and collect handshakes
 					fi
 					
 			fi
-			echo
-			echo $BLU" [*] Analyzing pcap for handshake [*] "$RST
-			fanalyze
+			if [ $GDONE -z ] 2> /dev/null
+				then
+					fanalyze
+			fi
 			if [[ $DO = 'A' || $DEAU = "1" ]] 2> /dev.null
 				then
 					DECNT=$((DECNT + 1))
