@@ -506,7 +506,7 @@ fautobot()																#Automagically find new target clients
 				then
 					SDONE=""
 				else
-					POWER=$(echo "$FCAT" | grep $CLIENT | cut -d ',' -f 4 | head -n 1)
+					POWER=$(echo "$FCAT" | grep "$CLIENT" | cut -d ',' -f 4 | head -n 1)
 					POWER=${POWER:2}
 					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
 					ESSID=${ESSID:1}
@@ -596,7 +596,6 @@ fautobot()																#Automagically find new target clients
 				"WPA")BARG='-z ';;
 				"WPA2")BARG='-Z '
 			esac
-			PART1=${RANDOM:0:2}
 			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
 	fi
 	fautocap
@@ -634,8 +633,8 @@ fautocap()																#Deauth targets and collect handshakes
 					fi
 					for OCLI in $TARGETS
 						do
-							POWER=$(echo "$TMPF" | grep "$OCLI" | cut -d ',' -f 4)
-							POWER=${POWER:1}
+							POWER=$(echo "$TMPF" | grep "$OCLI" | cut -d ',' -f 4 | head -n 1)
+							POWER=${POWER:2}
 							echo "$OCLI $POWER" >> $HOME/tmpp
 						done
 					
@@ -885,12 +884,22 @@ fautocap()																#Deauth targets and collect handshakes
 fanalyze()																#Analyze pcap for handshakes
 {
 	GDONE="";EDONE="";ANALYZE="";ANALYZE2=""
-	ANALYZE=$(cowpatty -r $HOME/tmp-01.cap -c)
+	if [ -f $HOME/tmp-01.cap ] 2> /dev/null
+		then
+			ANALYZE=$(cowpatty -r $HOME/tmp-01.cap -c)
+		else
+			ANALYZE='fh348hf'
+	fi
 	if [ $NIC2 -z ] 2> /dev/null
 		then
 			A=1
 		else
-			ANALYZE2=$(cowpatty -r $HOME/tmpe-01.cap -c)
+			if [ -f $HOME/tmpe-01.cap ] 2> /dev/null
+				then
+					ANALYZE2=$(cowpatty -r $HOME/tmpe-01.cap -c)
+				else
+					ANALYZE2='fh348hf'
+			fi
 			if  [ $(echo "$ANALYZE2" | grep Collected) -z ] 2> /dev/null
 				then
 					A=1
