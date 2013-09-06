@@ -42,7 +42,7 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 		-h  - This help
 			
 	Examples: 
-		 handshaker -a -i wlan0 -d 5			 ~ Autobot mode on wlan0 and deauth 5 times.
+		 handshaker -a -i wlan0 -t 5			 ~ Autobot mode on wlan0 and attempt 5 times.
 		 handshaker -e Hub3-F -w wordlist.txt	 	 ~ Find AP like 'Hub3-F' and crack with wordlist.
 		 handshaker -l -o out/dir			 ~ List all APs and save handshakes to out/dir.
 		 handshaker -c handshake.cap -w wordlist.txt	 ~ Crack handshake.cap with wordlist.
