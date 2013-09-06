@@ -1,7 +1,16 @@
 HandShaker
 ==========
-handshaker - Detect, deauth, capture and crack WPA/2 handshakes
-	       - Record AP location with Android GPS over adb
+- Detect, deauth, capture and crack WPA/2 handshakes
+- Record AP location with Android GPS
+
+Installation:
+==========
+
+Run 'make install' in the HandShaker directory.
+handshaker will now be installed and can be run with 'handshaker'.
+	
+Usage
+==========
 		
 	Usage: 	handshaker <Method> <Options>
 		

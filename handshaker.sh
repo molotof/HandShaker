@@ -341,6 +341,7 @@ flistap()																#List all APs
 			FCAT=$(cat $HOME/tmp-01.csv)
 		else
 			FCAT=$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)
+			echo "$FCAT" > $HOME/tmp-01.csv
 	fi
 	ESSID=$(cat $HOME/tmp2 | sed -n "$AP"p)
 	ESSID=${ESSID:1}
@@ -1028,7 +1029,7 @@ fstartgps()																#Configure GPS
 			fi
 		done
 	clear
-	echo $RED" [>]$GRN SATALITE UPLINK ESTABLISHED$RED [<]"
+	echo $RED" [>]$GRN SATELLITE UPLINK ESTABLISHED$RED [<]"
 	echo
 	echo $GRN" [*] GPS tagging enabled!, co-ordinates will appear in $OUTDIR/got "
 	echo $RED" [*] We get GPS once the$GRN icon is locked in on your android!"
