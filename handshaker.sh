@@ -32,13 +32,12 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 		-i2 - Second wireless card (better capture rate)
 		-w  - Wordlist to use for cracking
 		-o  - Save handshakes to custom directory
-		-d  - Attempts to capture for each AP (default 3)
-		-r  - Deauth packets sent to each client (default 1)
+		-d  - Deauth packets sent to each client (default 1)
 		-p  - Only attack clients above this power level
 		-g  - Use android GPS to record AP location
-		-t  - Timeout to wait for GPS at startup (default 2)
 		-b  - Use evil twin AP to capture handshakes
 		-m  - Use mdk3 for deauth (default aireplay-ng)
+		-t  - Attempts to capture per AP (default 3)
 		-s  - Silent
 		-h  - This help
 			
@@ -423,7 +422,7 @@ fbotstart()																#Startup Autobot
 	for CARD in $NICS
 		do
 			ifconfig $CARD down
-			iwconfig $CARD txpower 30 | grep rgssfs
+			iwconfig $CARD txpower 30 3> /dev/null
 			sleep 0.5
 			ifconfig $CARD up
 		done
@@ -1000,10 +999,6 @@ fcrack()																#Crack handshakes
 
 fstartgps()																#Configure GPS
 {
-	if [ $TIMEOUT -z ] 2> /dev/null
-		then
-			TIMEOUT=2
-	fi
 	clear
 	echo $GRN" [*] On your$RED android$GRN phone:"$BLU
 	echo " [1] Enable GPS"
@@ -1020,17 +1015,24 @@ fstartgps()																#Configure GPS
 	echo $BLU" [*] Checking GPS status"
 	PHONEIP=$(route -n | grep Gate -A 1 | grep 0 | cut -d '0' -f 5 | sed 's/^ *//g')
 	gpspipe -d -r "$PHONEIP:4352" -o $HOME/gpslog&
-	sleep $TIMEOUT
-	if [ $(cat $HOME/gpslog) -z ] 2> /dev/null
-		then
-			echo;$COLOR2 9;$COLOR 1;echo " [*] ERROR: Something went wrong, could not connect to android GPS server."$RST
-			fexit
-		else
-			echo $RED" [>]$GRN SATALITE UPLINK ESTABLISHED$RED [<]"
-			echo
-			echo $GRN" [*] GPS tagging enabled!, co-ordinates will appear in $OUTDIR/got "
-			sleep 2
-	fi
+	LCNT=0
+	while [ $LDONE -z ] 2> /dev/null
+		do
+			sleep 0.4
+			LDONE=$(cat $HOME/gpslog)
+			LCNT=$((LCNT + 1))
+			if [ $LCNT -ge 25 ] 2> /dev/null
+				then
+					echo;$COLOR2 9;$COLOR 1;echo " [*] ERROR: Something went wrong, could not connect to android GPS server."$RST
+					fexit
+			fi
+		done
+	clear
+	echo $RED" [>]$GRN SATALITE UPLINK ESTABLISHED$RED [<]"
+	echo
+	echo $GRN" [*] GPS tagging enabled!, co-ordinates will appear in $OUTDIR/got "
+	echo $RED" [*] We get GPS once the$GRN icon is locked in on your android!"
+	sleep 3
 }
 	
 fgetgps()
@@ -1126,6 +1128,6 @@ ACNT=1
 for ARG in $@
 	do
 		ACNT=$((ACNT + 1))
-		case $ARG in "-r")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-t")TIMEOUT=$(echo $@ | cut -d " " -f $ACNT);;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-d")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
+		case $ARG in "-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-t")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
 	done
 fstart
