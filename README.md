@@ -12,8 +12,8 @@ handshaker will now be installed and can be run with 'handshaker'.
 Usage
 ==========
 		
-	Usage: 	handshaker <Method> <Options>
-		
+		Usage: 	handshaker <Method> <Options>
+			
 		Method:
 			-a - Autobot or wardriving mode
 			-e - Search for AP by partial unique ESSID
@@ -28,6 +28,7 @@ Usage
 			-d  - Deauth packets sent to each client (default 1)
 			-p  - Only attack clients above this power level
 			-g  - Use android GPS to record AP location
+			-n  - Use besside-ng to capture handshakes
 			-b  - Use evil twin AP to capture handshakes
 			-m  - Use mdk3 for deauth (default aireplay-ng)
 			-t  - Attempts to capture per AP (default 3)
