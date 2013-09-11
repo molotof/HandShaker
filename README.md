@@ -1,7 +1,8 @@
 HandShaker
 ==========
-- Detect, deauth, capture and crack WPA/2 handshakes
-- Record AP location with Android GPS
+- Detect, deauth, capture, crack WPA/2 handshakes and WEP keys.
+- Record AP location with Android GPS.
+- Maintain a db of pwnd APs to avoid repetition.
 
 Installation:
 ==========
@@ -12,8 +13,11 @@ handshaker will now be installed and can be run with 'handshaker'.
 Usage
 ==========
 		
+		HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automagically. 
+		 by d4rkcat <rfarage@yandex.com>
+				 
 		Usage: 	handshaker <Method> <Options>
-			
+		
 		Method:
 			-a - Autobot or wardriving mode
 			-e - Search for AP by partial unique ESSID
@@ -28,10 +32,11 @@ Usage
 			-d  - Deauth packets sent to each client (default 1)
 			-p  - Only attack clients above this power level
 			-g  - Use android GPS to record AP location
-			-n  - Use besside-ng to capture handshakes
-			-b  - Use evil twin AP to capture handshakes
-			-m  - Use mdk3 for deauth (default aireplay-ng)
-			-t  - Attempts to capture per AP (default 3)
+			-B  - Use besside-ng to capture handshakes
+			-E  - Use evil twin AP to capture handshakes
+			-M  - Use mdk3 for deauth (default aireplay-ng)
+			-T  - Attempts to capture per AP (default 3)
+			-W  - Only attack WEP encrypted APs
 			-s  - Silent
 			-h  - This help
 
@@ -40,3 +45,5 @@ Usage
 			 handshaker -e Hub3-F -w wordlist.txt	 	   ~ Find AP like 'Hub3-F' and crack with wordlist.
 			 handshaker -l -o out/dir			           ~ List all APs and save handshakes to out/dir.
 			 handshaker -c handshake.cap -w wordlist.txt   ~ Crack handshake.cap with wordlist.
+			 
+		all your AP are belong to us..

