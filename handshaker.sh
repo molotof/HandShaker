@@ -908,7 +908,9 @@ fautocap()																#Deauth targets and collect handshakes
 							GDONE=""
 						else
 							echo " [*]$BESI"
+							DATE=$(date +%Y%m%d)
 							mv wpa.cap $OUTDIR/$ESSID-$DATE.cap
+							SAVW=$OUTDIR/$ESSID-$DATE.cap
 							GDONE=1
 					fi
 					rm -rf besside.log;rm -rf wep.cap; rm -rf wpa.cap 2> /dev/null
@@ -991,7 +993,12 @@ fautocap()																#Deauth targets and collect handshakes
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 			fi
 		else
-			echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
+			if [ $SAVW -z ] 2> /de/null
+				then
+					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
+				else
+					echo " [*] Handshake saved to$BLU $SAVW$GRN [*] "
+			fi
 	fi
 	echo
 	if [ $GPS = 1 ] 2> /dev/null
@@ -1111,7 +1118,12 @@ fcrack()																#Crack handshakes
 							echo $RST
 						else
 							echo $BLU
-							cowpatty -f $WORDLIST -s "$ESSID" -r $PFILE
+							if [ $SAVW -z ] 2> /dev/null
+								then
+									cowpatty -f $WORDLIST -s "$ESSID" -r $PFILE
+								else
+									cowpatty -f $WORDLIST -s "$ESSID" -r $SAVW
+							fi
 							echo $RST
 					fi
 				else
