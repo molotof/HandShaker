@@ -897,6 +897,7 @@ fautocap()																#Deauth targets and collect handshakes
 									fi
 							fi	
 						else
+							sleep 0.5
 							iw $MON1 set channel $CHAN
 							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
 					fi
