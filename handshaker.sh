@@ -993,7 +993,7 @@ fautocap()																#Deauth targets and collect handshakes
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 			fi
 		else
-			if [ $SAVW -z ] 2> /de/null
+			if [ $SAVW -z ] 2> /dev/null
 				then
 					echo " [*] Handshake saved to$BLU $OUTDIR/$ESSID-$DATE.cap$GRN [*] "
 				else
