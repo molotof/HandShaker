@@ -23,6 +23,7 @@ Usage
 			-e - Search for AP by partial unique ESSID
 			-l - Scan for APs and present a target list
 			-c - Crack handshake from pcap
+			-r - WPS Cracking with reaver
 			
 		Options:
 			-i  - Wireless Interface card

