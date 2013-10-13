@@ -1,6 +1,7 @@
 HandShaker
 ==========
 - Detect, deauth, capture, crack WPA/2 handshakes and WEP keys.
+- Crack WPS Pins
 - Record AP location with Android GPS.
 - Maintain a db of pwnd APs to avoid repetition.
 
