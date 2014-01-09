@@ -89,7 +89,7 @@ pyrit"
 		clear
 	fi
 
-	echo $BLU"""NNNNDND88O~~~~~~~~~~~~~~~~~~=~~==~~===~=============+====+==++==++:ZOOO?8D8O.OOO
+echo $BLU"""NNNNDND88O~~~~~~~~~~~~~~~~~~=~~==~~===~=============+====+==++==++:ZOOO?8D8O.OOO
 DNDDDDD8DDD8O=~~~~~~~~~~~~~~~~~~~~=~~~~~~===================$7?+.$D.Z,$DDODINZO8
 NND88D8NDDDDO888Z~~~~~~~~~~~~~~~~~~~~~~~==~~=~~==~=======,,Z8DD8D8DNNND8ZOONNND?
 MND8NNNDDN8DD8O8O8OZ~~~~~~~~~~~~~~~~~~7Z$?I?+====~~~===?,,:8DZOO+IDNNNDDDI+77+~7
@@ -320,7 +320,9 @@ sleep 2
 		fapscan
 	fi
 }
-
+########################################################################
+# AP SCANNER
+########################################################################
 fapscan()																#Grep for AP ESSID
 {
 	clear
@@ -366,7 +368,9 @@ fapscan()																#Grep for AP ESSID
 	echo "$TMPF" > /tmp-01.csv
 	fclientscan
 }
-
+########################################################################
+# LIST AP's
+########################################################################
 flistap()																#List all APs
 {
 	if [ $NIC2 -z ] 2> /dev/null
@@ -419,7 +423,9 @@ flistap()																#List all APs
 	CHAN=$((CHAN + 1 - 1))
 	fclientscan
 }
-
+########################################################################
+# SCAN CLIENTS
+########################################################################
 fclientscan()															#Find active clients
 {
 	CNT="0"
@@ -441,9 +447,8 @@ fclientscan()															#Find active clients
 		fi
 	fi
 	echo -e $RED""" [*] Attacking:\t\t $GRN$ESSID$RED
- [*] BSSID:\t\t $GRN$BSSID$RED
- [*] Channel:\t\t $GRN$CHAN$RED"
-	echo
+	[*] BSSID:\t\t $GRN$BSSID$RED
+ 	[*] Channel:\t\t $GRN$CHAN$RED"
 	rm -rf /tmp* 2> /dev/null
 	if [ $BESS -z ] 2> /dev/null
 	then
@@ -490,7 +495,9 @@ fclientscan()															#Find active clients
 	done
 	fautocap
 }
-
+########################################################################
+# AUTOBOT START
+########################################################################
 fbotstart()																#Startup Autobot
 {	
 	killall airodump-ng 2> /dev/null
@@ -544,7 +551,9 @@ fbotstart()																#Startup Autobot
 	modprobe pcspkr
 	fautobot
 }
-
+########################################################################
+# AUTOBOT
+########################################################################
 fautobot()																#Automagically find new target clients
 {	
 	sleep 0.7
